@@ -1,0 +1,6 @@
+shioaji>=1.2.5
+pandas>=2.0
+python-dotenv>=1.0
+apscheduler>=3.10
+dash>=2.17
+dash-bootstrap-components>=1.6

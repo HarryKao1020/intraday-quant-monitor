@@ -1,0 +1,1094 @@
+{
+    "晶圓代工與先進製程_成熟製程": [
+        {
+            "company_name": "台積電",
+            "stock_code": "2330"
+        },
+        {
+            "company_name": "聯電",
+            "stock_code": "2303"
+        },
+        {
+            "company_name": "世界",
+            "stock_code": "5347"
+        },
+        {
+            "company_name": "力積電",
+            "stock_code": "6770"
+        }
+    ],
+    "IC設計與矽智財": [
+        {
+            "company_name": "聯發科",
+            "stock_code": "2454"
+        },
+        {
+            "company_name": "瑞昱",
+            "stock_code": "2379"
+        },
+        {
+            "company_name": "聯詠",
+            "stock_code": "3034"
+        },
+        {
+            "company_name": "世芯-KY",
+            "stock_code": "3661"
+        },
+        {
+            "company_name": "創意",
+            "stock_code": "3443"
+        },
+        {
+            "company_name": "信驊",
+            "stock_code": "5274"
+        },
+        {
+            "company_name": "祥碩",
+            "stock_code": "5269"
+        },
+        {
+            "company_name": "智原",
+            "stock_code": "3035"
+        },
+        {
+            "company_name": "群聯",
+            "stock_code": "8299"
+        },
+        {
+            "company_name": "愛普*",
+            "stock_code": "6531"
+        },
+        {
+            "company_name": "譜瑞-KY",
+            "stock_code": "4966"
+        },
+        {
+            "company_name": "新唐",
+            "stock_code": "4919"
+        },
+        {
+            "company_name": "矽力*-KY",
+            "stock_code": "6415"
+        },
+        {
+            "company_name": "力旺",
+            "stock_code": "3529"
+        },
+        {
+            "company_name": "鈺太",
+            "stock_code": "6449"
+        },
+        {
+            "company_name": "矽創",
+            "stock_code": "8016"
+        },
+        {
+            "company_name": "矽統",
+            "stock_code": "2363"
+        },
+        {
+            "company_name": "威盛",
+            "stock_code": "2388"
+        }
+    ],
+    "廠務工程": [
+        {
+            "company_name": "漢唐",
+            "stock_code": "2404"
+        },
+        {
+            "company_name": "亞翔",
+            "stock_code": "6139"
+        },
+        {
+            "company_name": "聖暉*",
+            "stock_code": "5536"
+        },
+        {
+            "company_name": "洋基工程",
+            "stock_code": "6691"
+        },
+        {
+            "company_name": "信紘科",
+            "stock_code": "6667"
+        },
+        {
+            "company_name": "朋億*",
+            "stock_code": "6613"
+        },
+        {
+            "company_name": "巨漢",
+            "stock_code": "6903"
+        },
+        {
+            "company_name": "帆宣",
+            "stock_code": "6196"
+        }
+    ],
+    "半導體設備": [
+        {
+            "company_name": "弘塑",
+            "stock_code": "3131"
+        },
+        {
+            "company_name": "辛耘",
+            "stock_code": "3583"
+        },
+        {
+            "company_name": "萬潤",
+            "stock_code": "6187"
+        },
+        {
+            "company_name": "家登",
+            "stock_code": "3680"
+        },
+        {
+            "company_name": "閎康",
+            "stock_code": "3587"
+        },
+        {
+            "company_name": "致茂",
+            "stock_code": "2360"
+        },
+        {
+            "company_name": "京鼎",
+            "stock_code": "3413"
+        },
+        {
+            "company_name": "中砂",
+            "stock_code": "1560"
+        },
+        {
+            "company_name": "精材",
+            "stock_code": "3374"
+        },
+
+        {
+            "company_name": "采鈺",
+            "stock_code": "6789"
+        },
+        {
+            "company_name": "鴻勁",
+            "stock_code": "7769"
+        },
+        {
+            "company_name": "新應材",
+            "stock_code": "4749"
+        },
+        {
+            "company_name": "印能科技",
+            "stock_code": "7734"
+        },
+        {
+            "company_name": "牧德",
+            "stock_code": "3563"
+        },
+
+        {
+            "company_name": "盟立",
+            "stock_code": "2464"
+        },
+        {
+            "company_name": "汎銓",
+            "stock_code": "6830"
+        },
+        {
+            "company_name": "均華",
+            "stock_code": "5443"
+        },
+        {
+            "company_name": "志聖",
+            "stock_code": "2467"
+        },
+        {
+            "company_name": "鈦昇",
+            "stock_code": "8027"
+        },
+        {
+            "company_name": "群翊",
+            "stock_code": "6664"
+        },
+        {
+            "company_name": "光洋科",
+            "stock_code": "1785"
+        }
+    ],
+    "矽晶圓": [
+        {
+            "company_name": "昇陽半導體",
+            "stock_code": "8028"
+        },
+        {
+            "company_name": "環球晶",
+            "stock_code": "6488"
+        },
+        {
+            "company_name": "中美晶",
+            "stock_code": "5483"
+        },
+        {
+            "company_name": "合晶",
+            "stock_code": "6182"
+        },
+        {
+            "company_name": "台勝科",
+            "stock_code": "3532"
+        },
+        {
+            "company_name": "嘉晶",
+            "stock_code": "3016"
+        }
+
+
+    ],
+    "探針卡": [
+        {
+            "company_name": "雍智科技",
+            "stock_code": "6683"
+        },
+        {
+            "company_name": "中探針",
+            "stock_code": "6217"
+        },
+        {
+            "company_name": "旺矽",
+            "stock_code": "6223"
+        },
+        {
+            "company_name": "精測",
+            "stock_code": "6510"
+        },
+        {
+            "company_name": "穎崴",
+            "stock_code": "6515"
+        }
+    ],
+    "封測": [
+        {
+            "company_name": "日月光投控",
+            "stock_code": "3711"
+        },
+        {
+            "company_name": "京元電子",
+            "stock_code": "2449"
+        },
+        {
+            "company_name": "力成",
+            "stock_code": "6239"
+        },
+        {
+            "company_name": "頎邦",
+            "stock_code": "6147"
+        },
+        {
+            "company_name": "矽格",
+            "stock_code": "6257"
+        },
+        {
+            "company_name": "欣銓",
+            "stock_code": "3264"
+        },
+        {
+            "company_name": "超豐",
+            "stock_code": "2441"
+        }
+    ],
+    "AI伺服器與電腦代工(EMS)": [
+        {
+            "company_name": "鴻海",
+            "stock_code": "2317"
+        },
+        {
+            "company_name": "廣達",
+            "stock_code": "2382"
+        },
+        {
+            "company_name": "緯創",
+            "stock_code": "3231"
+        },
+        {
+            "company_name": "緯穎",
+            "stock_code": "6669"
+        },
+        {
+            "company_name": "技嘉",
+            "stock_code": "2376"
+        },
+        {
+            "company_name": "微星",
+            "stock_code": "2377"
+        },
+        {
+            "company_name": "華碩",
+            "stock_code": "2357"
+        },
+        {
+            "company_name": "仁寶",
+            "stock_code": "2324"
+        },
+        {
+            "company_name": "英業達",
+            "stock_code": "2356"
+        }
+    ],
+    "伺服器散熱系統": [
+        {
+            "company_name": "奇鋐",
+            "stock_code": "3017"
+        },
+        {
+            "company_name": "雙鴻",
+            "stock_code": "3324"
+        },
+        {
+            "company_name": "健策",
+            "stock_code": "3653"
+        },
+        {
+            "company_name": "高力",
+            "stock_code": "8996"
+        },
+        {
+            "company_name": "鴻準",
+            "stock_code": "2354"
+        },
+        {
+            "company_name": "台達電",
+            "stock_code": "2308"
+        }
+    ],
+    "伺服器機殼與滑軌": [
+        {
+            "company_name": "川湖",
+            "stock_code": "2059"
+        },
+        {
+            "company_name": "富世達",
+            "stock_code": "6805"
+        },
+        {
+            "company_name": "勤誠",
+            "stock_code": "8210"
+        }
+    ],
+    "光通訊與矽光子": [
+        {
+            "company_name": "聯亞",
+            "stock_code": "3081"
+        },
+        {
+            "company_name": "穩懋",
+            "stock_code": "3105"
+        },
+        {
+            "company_name": "全新",
+            "stock_code": "2455"
+        },
+        {
+            "company_name": "大立光",
+            "stock_code": "3008"
+        },
+        {
+            "company_name": "富采",
+            "stock_code": "3714"
+        },
+        {
+            "company_name": "上詮",
+            "stock_code": "3363"
+        },
+        {
+            "company_name": "光聖",
+            "stock_code": "6442"
+        },
+        {
+            "company_name": "華星光",
+            "stock_code": "4979"
+        },
+        {
+            "company_name": "眾達-KY",
+            "stock_code": "4977"
+        },
+        {
+            "company_name": "IET-KY",
+            "stock_code": "4971"
+        },
+        {
+            "company_name": "環宇-KY",
+            "stock_code": "4991"
+        },
+        {
+            "company_name": "訊芯-KY",
+            "stock_code": "6451"
+        },
+        {
+            "company_name": "波若威",
+            "stock_code": "3163"
+        },
+        {
+            "company_name": "聯鈞",
+            "stock_code": "3450"
+        },
+        {
+            "company_name": "瑞軒",
+            "stock_code": "2489"
+        },
+        {
+
+            "company_name": "光環",
+            "stock_code": "3234"
+        }
+
+    ],
+    "高速傳輸與連接器": [
+        {
+            "company_name": "貿聯-KY",
+            "stock_code": "3665"
+        },
+        {
+            "company_name": "佳必琪",
+            "stock_code": "6197"
+        },
+        {
+            "company_name": "宏致",
+            "stock_code": "3605"
+        },
+        {
+            "company_name": "嘉澤",
+            "stock_code": "3533"
+        },
+        {
+            "company_name": "良維",
+            "stock_code": "6290"
+        }
+    ],
+    "印刷電路板(PCB)與載板(ABF)與銅箔基板(CCL)": [
+        {
+            "company_name": "台光電",
+            "stock_code": "2383"
+        },
+        {
+            "company_name": "台燿",
+            "stock_code": "6274"
+        },
+        {
+            "company_name": "聯茂",
+            "stock_code": "6213"
+        },
+        {
+            "company_name": "騰輝電子-KY",
+            "stock_code": "6672"
+        },
+        {
+            "company_name": "欣興",
+            "stock_code": "3037"
+        },
+        {
+            "company_name": "臻鼎-KY",
+            "stock_code": "4958"
+        },
+        {
+            "company_name": "景碩",
+            "stock_code": "3189"
+        },
+        {
+            "company_name": "南電",
+            "stock_code": "8046"
+        },
+        {
+            "company_name": "金像電",
+            "stock_code": "2368"
+        },
+        {
+            "company_name": "華通",
+            "stock_code": "2313"
+        },
+        {
+            "company_name": "博智",
+            "stock_code": "8155"
+        },
+        {
+            "company_name": "健鼎",
+            "stock_code": "3044"
+        },
+        {
+            "company_name": "台表科",
+            "stock_code": "6278"
+        },
+        {
+            "company_name": "高技",
+            "stock_code": "5439"
+        },
+        {
+            "company_name": "尖點",
+            "stock_code": "8021"
+        },
+        {
+            "company_name": "定穎投控",
+            "stock_code": "3715"
+        }
+
+    ],
+    "PCB上游原物料": [
+        {
+            "company_name": "長興",
+            "stock_code": "1717"
+        },
+        {
+            "company_name": "南亞",
+            "stock_code": "1303"
+        },
+        {
+            "company_name": "台玻",
+            "stock_code": "1802"
+        },
+        {
+            "company_name": "富喬",
+            "stock_code": "1815"
+        },
+        {
+            "company_name": "昇貿",
+            "stock_code": "3305"
+        },
+        {
+            "company_name": "亞泰金屬",
+            "stock_code": "6727"
+        },
+        {
+            "company_name": "金居",
+            "stock_code": "8358"
+        },
+        {
+            "company_name": "建榮",
+            "stock_code": "5340"
+        },
+        {
+            "company_name": "德宏",
+            "stock_code": "5475"
+        }
+
+    ],
+    "工業電腦": [
+        {
+            "company_name": "研華",
+            "stock_code": "2395"
+        },
+        {
+            "company_name": "樺漢",
+            "stock_code": "6414"
+        },
+        {
+            "company_name": "艾訊",
+            "stock_code": "3088"
+        },
+        {
+            "company_name": "融程電",
+            "stock_code": "3416"
+        },
+        {
+            "company_name": "華擎",
+            "stock_code": "3515"
+        },
+        {
+            "company_name": "茂訊",
+            "stock_code": "ˇ3213"
+        },
+        {
+            "company_name": "威強電",
+            "stock_code": "3022"
+        }
+    ],
+    "低軌衛星": [
+        {
+            "company_name": "昇達科",
+            "stock_code": "3491"
+        },
+        {
+            "company_name": "萊德光電-KY",
+            "stock_code": "7717"
+        },
+        {
+            "company_name": "華通",
+            "stock_code": "2313"
+        },
+        {
+            "company_name": "啟碁",
+            "stock_code": "6285"
+        },
+        {
+            "company_name": "燿華",
+            "stock_code": "2367"
+        },
+        {
+            "company_name": "敬鵬",
+            "stock_code": "2355"
+        },
+        {
+            "company_name": "同欣電",
+            "stock_code": "6271"
+        }
+    ],
+    "電源供應與備援電池(BBU)": [
+        {
+            "company_name": "台達電",
+            "stock_code": "2308"
+        },
+        {
+            "company_name": "光寶科",
+            "stock_code": "2301"
+        },
+        {
+            "company_name": "高力",
+            "stock_code": "8996"
+        },
+        {
+            "company_name": "康舒",
+            "stock_code": "6282"
+        },
+        {
+            "company_name": "順達",
+            "stock_code": "3211"
+        },
+        {
+            "company_name": "新盛力",
+            "stock_code": "4931"
+        },
+        {
+            "company_name": "AES-KY",
+            "stock_code": "6781"
+        }
+    ],
+    "記憶體模組與製造": [
+        {
+            "company_name": "南亞科",
+            "stock_code": "2408"
+        },
+        {
+            "company_name": "華邦電",
+            "stock_code": "2344"
+        },
+        {
+            "company_name": "旺宏",
+            "stock_code": "2337"
+        },
+        {
+            "company_name": "威剛",
+            "stock_code": "3260"
+        },
+        {
+            "company_name": "群聯",
+            "stock_code": "8299"
+        },
+        {
+            "company_name": "愛普*",
+            "stock_code": "6531"
+        },
+        {
+            "company_name": "宜鼎",
+            "stock_code": "5289"
+        },
+        {
+            "company_name": "晶豪科",
+            "stock_code": "3006"
+        },
+        {
+            "company_name": "創見",
+            "stock_code": "2451"
+        },
+        {
+            "company_name": "鈺創",
+            "stock_code": "5351"
+        },
+        {
+            "company_name": "十銓",
+            "stock_code": "4967"
+        },
+        {
+            "company_name": "凌航",
+            "stock_code": "3135"
+        },
+        {
+            "company_name": "南茂",
+            "stock_code": "8150"
+        }
+    ],
+    "被動元件": [
+        {
+            "company_name": "國巨",
+            "stock_code": "2327"
+        },
+        {
+            "company_name": "華新科",
+            "stock_code": "2492"
+        },
+        {
+            "company_name": "信昌電",
+            "stock_code": "6173"
+        },
+        {
+            "company_name": "禾伸堂",
+            "stock_code": "3026"
+        },
+        {
+            "company_name": "蜜望實",
+            "stock_code": "8043"
+        },
+        {
+            "company_name": "九豪",
+            "stock_code": "6127"
+        },
+        {
+            "company_name": "鈺邦",
+            "stock_code": "6449"
+        },
+        {
+            "company_name": "立隆電",
+            "stock_code": "2472"
+        },
+        {
+            "company_name": "凱美",
+            "stock_code": "2375"
+        },
+        {
+            "company_name": "日電貿",
+            "stock_code": "3090"
+        },
+        {
+            "company_name": "光頡",
+            "stock_code": "3624"
+        },
+        {
+            "company_name": "臺慶科",
+            "stock_code": "3357"
+        },
+        {
+            "company_name": "金山電",
+            "stock_code": "8042"
+        },
+        {
+            "company_name": "天二科技",
+            "stock_code": "6834"
+        }
+    ],
+    "石英元件": [
+        {
+            "company_name": "晶技",
+            "stock_code": "3042"
+        },
+        {
+            "company_name": "希華",
+            "stock_code": "2484"
+        },
+        {
+            "company_name": "泰藝",
+            "stock_code": "8289"
+        },
+        {
+            "company_name": "加高",
+            "stock_code": "8182"
+        },
+        {
+            "company_name": "台嘉碩",
+            "stock_code": "3221"
+        }
+    ],
+    "工具機與機器人": [
+        {
+            "company_name": "亞德客-KY",
+            "stock_code": "1590"
+        },
+        {
+            "company_name": "上銀",
+            "stock_code": "2049"
+        },
+        {
+            "company_name": "新代",
+            "stock_code": "7750"
+        },
+        {
+            "company_name": "全球傳動",
+            "stock_code": "4540"
+        },
+        {
+            "company_name": "達明",
+            "stock_code": "4585"
+        },
+        {
+            "company_name": "和大",
+            "stock_code": "1536"
+        },
+        {
+            "company_name": "大銀微系統",
+            "stock_code": "4576"
+        },
+        {
+            "company_name": "所羅門",
+            "stock_code": "2359"
+        },
+        {
+            "company_name": "和椿",
+            "stock_code": "6215"
+        },
+        {
+            "company_name": "直得",
+            "stock_code": "1597"
+        },
+        {
+            "company_name": "穎漢",
+            "stock_code": "4562"
+        },
+        {
+            "company_name": "羅昇",
+            "stock_code": "8374"
+        },
+        {
+            "company_name": "盟立",
+            "stock_code": "2664"
+        },
+        {
+            "company_name": "宇隆",
+            "stock_code": "2233"
+        },
+        {
+            "company_name": "台灣精銳",
+            "stock_code": "4583"
+        }
+    ],
+    "面板光學與顯示器": [
+        {
+            "company_name": "大立光",
+            "stock_code": "3008"
+        },
+        {
+            "company_name": "玉晶光",
+            "stock_code": "3406"
+        },
+        {
+            "company_name": "群創",
+            "stock_code": "3481"
+        },
+        {
+            "company_name": "友達",
+            "stock_code": "2409"
+        },
+        {
+            "company_name": "元太",
+            "stock_code": "8069"
+        },
+        {
+            "company_name": "亞光",
+            "stock_code": "3019"
+        },
+        {
+            "company_name": "佳能",
+            "stock_code": "2374"
+        },
+        {
+            "company_name": "正達",
+            "stock_code": "3149"
+        }
+    ],
+    "網通設備": [
+        {
+            "company_name": "智邦",
+            "stock_code": "2345"
+        },
+        {
+            "company_name": "中磊",
+            "stock_code": "5388"
+        },
+        {
+            "company_name": "啟碁",
+            "stock_code": "6285"
+        },
+        {
+            "company_name": "智易",
+            "stock_code": "8039"
+        },
+        {
+            "company_name": "正文",
+            "stock_code": "4906"
+        },
+        {
+            "company_name": "兆赫",
+            "stock_code": "2485"
+        }
+    ],
+    "電子通路商": [
+        {
+            "company_name": "文曄",
+            "stock_code": "3036"
+        },
+        {
+            "company_name": "至上",
+            "stock_code": "8112"
+        },
+        {
+            "company_name": "威健",
+            "stock_code": "3033"
+        },
+        {
+            "company_name": "蔚華科",
+            "stock_code": "3055"
+        },
+        {
+            "company_name": "益登",
+            "stock_code": "3048"
+        },
+        {
+            "company_name": "大聯大",
+            "stock_code": "3702"
+        },
+        {
+            "company_name": "日電貿",
+            "stock_code": "3090"
+        }
+    ],
+    "塑化": [
+        {
+            "company_name": "中華化",
+            "stock_code": "1727"
+        },
+        {
+            "company_name": "南亞",
+            "stock_code": "1303"
+        },
+        {
+            "company_name": "中纖",
+            "stock_code": "1718"
+        },
+        {
+            "company_name": "中石化",
+            "stock_code": "1314"
+        },
+        {
+            "company_name": "台聚",
+            "stock_code": "1304"
+        },
+        {
+            "company_name": "台化",
+            "stock_code": "1326"
+        },
+        {
+            "company_name": "台橡",
+            "stock_code": "2103"
+        },
+        {
+            "company_name": "台塑",
+            "stock_code": "1301"
+        },
+        {
+            "company_name": "台塑化",
+            "stock_code": "6505"
+        }
+    ],
+    "特用化學": [
+        {
+            "company_name": "國精化",
+            "stock_code": "4722"
+        },
+        {
+            "company_name": "永光",
+            "stock_code": "1711"
+        }
+    ],
+    "鋼鐵": [
+        {
+            "company_name": "華新",
+            "stock_code": "1605"
+        },
+        {
+            "company_name": "大成鋼",
+            "stock_code": "2027"
+        }
+    ],
+    "貨櫃與散裝船": [
+        {
+            "company_name": "長榮",
+            "stock_code": "2603"
+        },
+        {
+            "company_name": "陽明",
+            "stock_code": "2609"
+        },
+        {
+            "company_name": "萬海",
+            "stock_code": "2615"
+        },
+        {
+            "company_name": "台驊投控",
+            "stock_code": "2636"
+        },
+        {
+            "company_name": "慧洋-KY",
+            "stock_code": "2637"
+        }
+    ],
+    "金融保險": [
+        {
+            "company_name": "富邦金",
+            "stock_code": "2881"
+        },
+        {
+            "company_name": "國泰金",
+            "stock_code": "2882"
+        },
+        {
+            "company_name": "中信金",
+            "stock_code": "2891"
+        },
+        {
+            "company_name": "台新金",
+            "stock_code": "2887"
+        }
+    ],
+    "功率半導體": [
+        {
+            "company_name": "環球晶",
+            "stock_code": "6488"
+        },
+        {
+            "company_name": "漢磊",
+            "stock_code": "3707"
+        },
+        {
+            "company_name": "嘉晶",
+            "stock_code": "3016"
+        },
+        {
+            "company_name": "強茂",
+            "stock_code": "2481"
+        },
+        {
+            "company_name": "台半",
+            "stock_code": "5425"
+        },
+        {
+            "company_name": "矽立-KY",
+            "stock_code": "6415"
+        },
+        {
+            "company_name": "富鼎",
+            "stock_code": "8261"
+        },
+        {
+            "company_name": "朋程",
+            "stock_code": "8255"
+        },
+        {
+            "company_name": "台亞",
+            "stock_code": "2340"
+        },
+        {
+            "company_name": "茂達",
+            "stock_code": "6138"
+        },
+        {
+            "company_name": "力智",
+            "stock_code": "6719"
+        },
+        {
+            "company_name": "致新",
+            "stock_code": "8081"
+        }
+    ]
+}
