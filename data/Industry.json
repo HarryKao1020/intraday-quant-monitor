@@ -461,7 +461,7 @@
             "stock_code": "6290"
         }
     ],
-    "印刷電路板(PCB)與載板(ABF)與銅箔基板(CCL)": [
+    "印刷電路板(PCB)與銅箔基板(CCL)": [
         {
             "company_name": "台光電",
             "stock_code": "2383"
@@ -477,22 +477,6 @@
         {
             "company_name": "騰輝電子-KY",
             "stock_code": "6672"
-        },
-        {
-            "company_name": "欣興",
-            "stock_code": "3037"
-        },
-        {
-            "company_name": "臻鼎-KY",
-            "stock_code": "4958"
-        },
-        {
-            "company_name": "景碩",
-            "stock_code": "3189"
-        },
-        {
-            "company_name": "南電",
-            "stock_code": "8046"
         },
         {
             "company_name": "金像電",
@@ -527,6 +511,24 @@
             "stock_code": "3715"
         }
 
+    ],
+    "ABF": [
+        {
+            "company_name": "欣興",
+            "stock_code": "3037"
+        },
+        {
+            "company_name": "臻鼎-KY",
+            "stock_code": "4958"
+        },
+        {
+            "company_name": "景碩",
+            "stock_code": "3189"
+        },
+        {
+            "company_name": "南電",
+            "stock_code": "8046"
+        }
     ],
     "PCB上游原物料": [
         {
@@ -564,8 +566,11 @@
         {
             "company_name": "德宏",
             "stock_code": "5475"
+        },
+        {
+            "company_name": "台虹",
+            "stock_code": "8039"
         }
-
     ],
     "工業電腦": [
         {
@@ -853,6 +858,44 @@
             "stock_code": "4583"
         }
     ],
+    "軍工": [
+        {
+            "company_name": "雷虎",
+            "stock_code": "8033"
+        },
+        {
+            "company_name": "漢翔",
+            "stock_code": "2634"
+        },
+        {
+            "company_name": "亞航",
+            "stock_code": "2630"
+        },
+        {
+            "company_name": "長榮航太",
+            "stock_code": "2645"
+        },
+        {
+            "company_name": "龍德造船",
+            "stock_code": "6753"
+        },
+        {
+            "company_name": "台船",
+            "stock_code": "2208"
+        },
+        {
+            "company_name": "中光電",
+            "stock_code": "5371"
+        },
+        {
+            "company_name": "晟田",
+            "stock_code": "4541"
+        },
+        {
+            "company_name": "豐達科",
+            "stock_code": "3004"
+        }
+    ],
     "面板光學與顯示器": [
         {
             "company_name": "大立光",
@@ -902,7 +945,7 @@
         },
         {
             "company_name": "智易",
-            "stock_code": "8039"
+            "stock_code": "3596"
         },
         {
             "company_name": "正文",
@@ -993,8 +1036,28 @@
     ],
     "鋼鐵": [
         {
-            "company_name": "華新",
-            "stock_code": "1605"
+            "company_name": "中鋼",
+            "stock_code": "2002"
+        },
+        {
+            "company_name": "豐達科",
+            "stock_code": "3004"
+        },
+        {
+            "company_name": "豐興",
+            "stock_code": "2015"
+        },
+        {
+            "company_name": "中鴻",
+            "stock_code": "2014"
+        },
+        {
+            "company_name": "東和鋼鐵",
+            "stock_code": "2006"
+        },
+        {
+            "company_name": "燁興",
+            "stock_code": "2007"
         },
         {
             "company_name": "大成鋼",

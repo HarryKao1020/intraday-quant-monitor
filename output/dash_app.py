@@ -13,10 +13,11 @@
 """
 import threading
 import unicodedata
+import uuid
 import webbrowser
 from datetime import datetime
 
-from dash import Dash, dcc, html, Input, Output, ALL, ctx, no_update
+from dash import Dash, dcc, html, Input, Output, State, ALL, ctx, no_update
 import plotly.graph_objects as go
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -55,6 +56,10 @@ SURGE  = "#6fcf8f"   # 爆量觸發（柔綠）
 CODE   = "#79c0ff"   # 代碼（柔藍中性強調）
 
 FONT = "'JetBrains Mono','Fira Code',Menlo,Consolas,monospace"
+
+# 每次伺服器啟動的識別碼：分頁載入時烙進 layout，之後每次 tick 比對，
+# 不一致（= 伺服器已重啟）就自動重新整理頁面，避免舊分頁凍住。
+_BOOT_ID = uuid.uuid4().hex
 
 
 def _w(s: str) -> int:
@@ -522,21 +527,16 @@ _PERIOD_LABEL = {"day": "當日", "week": "本週", "lastweek": "上週"}
 
 def _chg_shade(chg: float) -> str:
     """
-    固定級距上色（opacity 做深淺）：漲紅跌綠。
-    |平均漲跌幅| 0~2% 淡、2~4% 中、4~6% 深、6% 以上最深。
+    固定級距上色（純 RGB，不用透明度——黑底上透明度只會變濁看不出深淺）：
+    |平均漲跌幅| 0~2% / 2~4% / 4~6% / 6%+ 四級。
+    紅（漲）只調 R 通道 110→160→210→255；綠（跌）只調 G 通道，越漲/跌越鮮明。
     """
     m = abs(chg)
-    if m < 2:
-        a = 0.30
-    elif m < 4:
-        a = 0.55
-    elif m < 6:
-        a = 0.80
-    else:
-        a = 1.0
+    level = 0 if m < 2 else (1 if m < 4 else (2 if m < 6 else 3))
+    v = (110, 160, 210, 255)[level]
     if chg >= 0:
-        return f"rgba(240,80,70,{a})"    # 紅（漲）
-    return f"rgba(60,190,110,{a})"       # 綠（跌）
+        return f"rgb({v},55,50)"     # 紅（漲）：調 R
+    return f"rgb(35,{v},75)"         # 綠（跌）：調 G
 
 
 def render_group_pie(rows, period="day"):
@@ -555,15 +555,17 @@ def render_group_pie(rows, period="day"):
     labels.append("其他(未分類)")
     values.append(other)
     colors.append("#252b36")
-    texts = [f"{l} {v / market_total * 100:.1f}%" if market_total > 0 else l
-             for l, v in zip(labels, values)]
-    texts[-1] = ""   # 其他不標
+    # 標籤顯示「族群 平均漲跌幅」；金流佔比移到 hover
+    texts = [f"{r['group']} {r['avg_chg']:+.2f}%" for r in data] + [""]   # 其他不標
+    chg_hover = [f"{r['avg_chg']:+.2f}%" for r in data] + ["—"]
 
     fig = go.Figure(go.Pie(
         labels=labels, values=values, sort=False, hole=0.62,
         marker=dict(colors=colors, line=dict(color="#161b22", width=1.5)),
         text=texts, textinfo="text", textposition="outside",
-        hovertemplate="%{label}<br>%{value:,.0f}億 · %{percent}<extra></extra>",
+        customdata=chg_hover,
+        hovertemplate="%{label}<br>漲跌 %{customdata} · %{value:,.0f}億 · 佔 %{percent}"
+                      "<extra></extra>",
     ))
     center_pct = f"{covered / market_total * 100:.1f}%" if market_total > 0 else "—"
     plabel = _PERIOD_LABEL.get(period, "當日")
@@ -699,6 +701,8 @@ def render_screen_body(period="day"):
 def serve_layout():
     return html.Div(className="page", children=[
         dcc.Interval(id="tick", interval=60_000, n_intervals=0),   # 畫面每分鐘重繪
+        dcc.Location(id="reloader", refresh=True),                 # 舊分頁自動重載用
+        dcc.Store(id="boot-id", data=_BOOT_ID),                    # 載入當下的伺服器識別碼
         dcc.Store(id="grp-open", data=None),
         dcc.Store(id="flow-period", data="day"),   # 模組十：當日/本週切換
         # 族群成分股 modal（點族群列開啟）
@@ -846,6 +850,17 @@ html,body{margin:0;padding:0;background:#0a0e14;}
 def create_app() -> Dash:
     # grp-pie 為動態產生元件（首次重繪才出現），需關閉 callback 驗證
     app = Dash(__name__, title="盤中量化監看", suppress_callback_exceptions=True)
+
+    # 防護：重啟伺服器後，未關閉的「舊瀏覽器分頁」會用舊 callback 規格輪詢，
+    # 參數數量對不上 → dash._prepare_grouping IndexError。靜默回 204（無更新），
+    # 避免 500 traceback 刷屏；舊分頁重新整理後即恢復正常。
+    @app.server.errorhandler(IndexError)
+    def _stale_tab_request(e):
+        from flask import request
+        if request.path == "/_dash-update-component":
+            print("[dash] 忽略舊分頁的過期請求（若持續出現，請重新整理舊的瀏覽器分頁）")
+            return "", 204
+        raise e
     app.index_string = _INDEX
     app.layout = serve_layout
 
@@ -869,23 +884,27 @@ def create_app() -> Dash:
         return value or "day"
 
     @app.callback(
-        Output("grp-open", "data"),
+        Output("reloader", "href"),
+        Input("tick", "n_intervals"),
+        State("boot-id", "data"),
+    )
+    def _check_boot(_, page_boot):
+        # 分頁的 boot-id 與伺服器不符 = 伺服器重啟過 → 自動重新整理
+        if page_boot != _BOOT_ID:
+            print("[dash] 偵測到舊分頁，自動重新整理")
+            return "/"
+        return no_update
+
+    # 開/關 modal 拆成三個獨立 callback（allow_duplicate 同寫 grp-open）。
+    # 不可合併：grp-row / grp-pie 是動態元件，合併時 WAIT↔LIVE 切換瞬間
+    # 瀏覽器請求會缺少未掛載元件的值 → Dash `_prepare_grouping` IndexError 500。
+    @app.callback(
+        Output("grp-open", "data", allow_duplicate=True),
         Input({"type": "grp-row", "index": ALL}, "n_clicks"),
-        Input("grp-modal-close", "n_clicks"),
-        Input("grp-pie", "clickData"),
         prevent_initial_call=True,
     )
-    def _grp_click(rows, _close, pie_click):
+    def _grp_click_row(rows):
         trig = ctx.triggered_id
-        if trig == "grp-modal-close":
-            return None
-        if trig == "grp-pie":
-            # 點圓餅切片也開 modal（「其他」不開）
-            try:
-                label = pie_click["points"][0]["label"]
-            except (TypeError, KeyError, IndexError):
-                return no_update
-            return label if label in MARKET_STATE.industry_detail else no_update
         if isinstance(trig, dict) and trig.get("type") == "grp-row":
             # 注意：pattern 輸入的 ctx.triggered[...]["value"] 恆為 None（Dash 4.x），
             # 必須從 ctx.inputs_list 對出被點那列的實際 n_clicks；
@@ -894,6 +913,27 @@ def create_app() -> Dash:
                 if spec["id"]["index"] == trig["index"] and val:
                     return trig["index"]
         return no_update
+
+    @app.callback(
+        Output("grp-open", "data", allow_duplicate=True),
+        Input("grp-modal-close", "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def _grp_close(n):
+        return None if n else no_update
+
+    @app.callback(
+        Output("grp-open", "data", allow_duplicate=True),
+        Input("grp-pie", "clickData"),
+        prevent_initial_call=True,
+    )
+    def _grp_click_pie(pie_click):
+        # 點圓餅切片開 modal（「其他」不開）
+        try:
+            label = pie_click["points"][0]["label"]
+        except (TypeError, KeyError, IndexError):
+            return no_update
+        return label if label in MARKET_STATE.industry_detail else no_update
 
     @app.callback(
         Output("grp-modal", "style"),
