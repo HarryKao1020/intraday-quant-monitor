@@ -1,12 +1,12 @@
 import pandas as pd
 from datetime import date, time, timedelta
-from store.memory_store import STOCK_STORE, StockState, MARKET_STATE
+from store.memory_store import STOCK_STORE, StockState, MARKET_STATE, report_data_error, clear_data_error
 from compute.macd import calc_macd
 from config import (
     WATCHLIST,
     MACD_FAST, MACD_SLOW, MACD_SIGNAL, MACD_MIN_BARS,
     MORNING_START, MORNING_END, HIST_WEIGHT_DAYS,
-    TAIEX_CODE, OTC_CODE,
+    TAIEX_CODE, OTC_CODE, KBAR_FETCH_DAYS,
 )
 from data.session import get_api
 
@@ -84,7 +84,7 @@ def _build_cum_ratio_curve(raw_df: pd.DataFrame, today, n_days: int) -> list:
     return [(int(m), float(r)) for m, r in avg.items()]
 
 
-def _fetch_index_history(days: int = 100) -> None:
+def _fetch_index_history(days: int = KBAR_FETCH_DAYS) -> None:
     """
     抓加權 / 櫃買指數的過去日收（升冪）與昨收，寫入 MARKET_STATE。
     昨收供盤中算漲跌幅（模組二）；日收序列供盤中即時算 MACD（模組三）。
@@ -92,9 +92,10 @@ def _fetch_index_history(days: int = 100) -> None:
     """
     api = get_api()
     today = date.today()
-    for code, exch, prev_attr, series_attr, vol_key in [
-        (TAIEX_CODE, "TSE", "taiex_prev_close", "taiex_daily_closes", "TAIEX"),
-        (OTC_CODE,   "OTC", "otc_prev_close",   "otc_daily_closes",   "OTC"),
+    failed = []
+    for code, exch, prev_attr, series_attr, dates_attr, vol_key in [
+        (TAIEX_CODE, "TSE", "taiex_prev_close", "taiex_daily_closes", "taiex_daily_dates", "TAIEX"),
+        (OTC_CODE,   "OTC", "otc_prev_close",   "otc_daily_closes",   "otc_daily_dates",   "OTC"),
     ]:
         try:
             contract = getattr(api.Contracts.Indexs, exch)[code]
@@ -119,6 +120,7 @@ def _fetch_index_history(days: int = 100) -> None:
             if not past.empty:
                 setattr(MARKET_STATE, prev_attr, float(past.iloc[-1]))
                 setattr(MARKET_STATE, series_attr, [float(x) for x in past.tolist()])
+                setattr(MARKET_STATE, dates_attr, list(past.index))   # 供日轉週 MACD
 
             # ── 模組一：指數量能（成交金額，元）──────────────────
             # 5日均額 + 累積比例曲線都用 Amount（看盤慣例：大盤量能=成交金額）
@@ -138,6 +140,11 @@ def _fetch_index_history(days: int = 100) -> None:
             entry["lastweek_amt"] = float(lw["Amount"].sum())
         except Exception as e:
             print(f"[fetcher] 指數 {exch}{code} 歷史抓取失敗: {e}")
+            failed.append(f"{vol_key}: {e}")
+    if failed:
+        report_data_error("指數歷史", "；".join(failed))
+    else:
+        clear_data_error("指數歷史")
 
 
 def prefetch_all(watchlist: dict[str, str] | None = None, fetch_index: bool = True) -> None:
@@ -152,6 +159,7 @@ def prefetch_all(watchlist: dict[str, str] | None = None, fetch_index: bool = Tr
     today = date.today()
     wl = watchlist if watchlist is not None else WATCHLIST
 
+    failed_codes = []
     for code, name in wl.items():
         print(f"[fetcher] 抓取 {code} {name}...")
 
@@ -160,9 +168,10 @@ def prefetch_all(watchlist: dict[str, str] | None = None, fetch_index: bool = Tr
         state = STOCK_STORE[code]
 
         try:
-            raw_df = _fetch_kbars_raw(code, days=100)   # 需 ≥60 交易日供 60MA 乖離
+            raw_df = _fetch_kbars_raw(code, days=KBAR_FETCH_DAYS)   # 需 ≥40 週 K 供週 MACD
         except Exception as e:
             print(f"[fetcher] {code} kbars 失敗: {e}")
+            failed_codes.append(code)
             continue
 
         daily_df = _build_daily(raw_df)
@@ -187,8 +196,10 @@ def prefetch_all(watchlist: dict[str, str] | None = None, fetch_index: bool = Tr
 
         # ── MACD（日線 Close）────────────────────────────
         # past_daily 是降冪，calc_macd / 日收序列需要時間升冪
-        close_asc = past_daily.sort_values("date")["Close"].reset_index(drop=True)
+        past_asc  = past_daily.sort_values("date")
+        close_asc = past_asc["Close"].reset_index(drop=True)
         state.daily_closes = [float(x) for x in close_asc.tolist()]   # 供盤中即時算 MACD
+        state.daily_dates  = list(past_asc["date"])                   # 供日轉週 MACD
         if len(past_daily) >= MACD_MIN_BARS:
             macd_df = calc_macd(close_asc, fast=MACD_FAST, slow=MACD_SLOW, signal=MACD_SIGNAL)
             state.histogram      = float(macd_df["histogram"].iloc[-1])
@@ -197,6 +208,12 @@ def prefetch_all(watchlist: dict[str, str] | None = None, fetch_index: bool = Tr
             state.macd_signal    = float(macd_df["macd_signal"].iloc[-1])
         else:
             print(f"[fetcher] {code} 日線根數不足（{len(past_daily)}），跳過 MACD")
+
+    # 有失敗才報警示；本次全數成功即解除（新增持股增量預取也會走到這裡）
+    if failed_codes:
+        report_data_error("歷史預取", f"{'、'.join(failed_codes)} kbars 抓取失敗")
+    else:
+        clear_data_error("歷史預取")
 
     # ── 指數昨收 + MACD 日收序列 ─────────────────────────
     if fetch_index:

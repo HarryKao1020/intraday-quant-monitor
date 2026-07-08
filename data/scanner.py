@@ -4,7 +4,7 @@ import datetime as dt
 import pandas as pd
 import shioaji as sj
 
-from store.memory_store import MARKET_STATE
+from store.memory_store import MARKET_STATE, report_data_error, clear_data_error
 from config import (
     SCANNER_COUNT, LIMIT_PRICE_THRESHOLD, HIGH_PRICE_COUNT,
     TAIEX_CODE, OTC_CODE,
@@ -87,8 +87,10 @@ def update_index_quotes() -> None:
             entry = MARKET_STATE.index_vol.setdefault("OTC", {})
             entry["today_vol"] = int(s.total_amount)     # 成交金額（元）
             entry["change_rate"] = float(s.change_rate)
+        clear_data_error("指數現價")
     except Exception as e:
         print(f"[scanner] 指數現價更新失敗: {e}")
+        report_data_error("指數現價", e)
 
 
 def update_scanners() -> None:
@@ -140,7 +142,9 @@ def update_scanners() -> None:
             _count_highprice_limits()
 
         MARKET_STATE.last_scanner_update = dt.datetime.now()
+        clear_data_error("市場掃描")
         print(f"[scanner] 更新完成 {MARKET_STATE.last_scanner_update:%H:%M:%S}")
 
     except Exception as e:
         print(f"[scanner] 更新失敗: {e}")
+        report_data_error("市場掃描", e)

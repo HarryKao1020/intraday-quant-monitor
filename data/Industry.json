@@ -1102,6 +1102,42 @@
         {
             "company_name": "台新金",
             "stock_code": "2887"
+        },
+        {
+            "company_name": "台中銀",
+            "stock_code": "2812"
+        },
+        {
+            "company_name": "臺企銀",
+            "stock_code": "2834"
+        },
+        {
+            "company_name": "聯邦銀",
+            "stock_code": "2838"
+        },
+        {
+            "company_name": "華南金",
+            "stock_code": "2880"
+        },
+        {
+            "company_name": "華南金",
+            "stock_code": "2880"
+        },
+        {
+            "company_name": "永豐金",
+            "stock_code": "2890"
+        },
+        {
+            "company_name": "第一金",
+            "stock_code": "2892"
+        },
+        {
+            "company_name": "兆豐金",
+            "stock_code": "2886"
+        },
+        {
+            "company_name": "合庫金",
+            "stock_code": "5880"
         }
     ],
     "功率半導體": [

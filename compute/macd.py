@@ -1,4 +1,5 @@
 import pandas as pd
+from datetime import date
 
 from store.memory_store import STOCK_STORE, MARKET_STATE
 from config import MACD_FAST, MACD_SLOW, MACD_SIGNAL, MACD_MIN_BARS
@@ -42,16 +43,32 @@ def _hist_status(hist: float, prev: float) -> str:
     return "—"
 
 
+def _weekly_closes(daily_dates: list, daily_closes: list, current_price: float) -> list:
+    """
+    日收盤（升冪、含日期）轉週收盤：每週取最後一個交易日收盤。
+    盤中最新價（>0）接為本週（成形中）的收盤，序列最後一根即本週。
+    """
+    if not daily_dates or len(daily_dates) != len(daily_closes):
+        return []
+    s = pd.Series(daily_closes, index=pd.to_datetime(daily_dates), dtype=float)
+    if current_price and current_price > 0:
+        s.loc[pd.Timestamp(date.today())] = float(current_price)
+    return s.resample("W-FRI").last().dropna().tolist()
+
+
 def _macd_row(kind: str, symbol: str, name: str,
-              daily_closes: list, current_price: float) -> dict:
+              daily_closes: list, daily_dates: list, current_price: float) -> dict:
     """
     用「過去日收 + 當前即時價」即時算一檔/一指數的 MACD 狀態。
-    daily_closes 為升冪過去交易日收盤；current_price 為盤中最新價（>0 才接上去）。
+    daily_closes / daily_dates 為升冪過去交易日收盤與日期；
+    current_price 為盤中最新價（>0 才接上去）。日線之外同步算週線柱狀體。
     """
     base = {
         "kind": kind, "symbol": symbol, "name": name,
         "dif": None, "macd": None, "histogram": None, "prev_histogram": None,
         "bar": None, "cross": "", "hist_status": "", "ok": False,
+        "w_histogram": None, "w_prev_histogram": None,
+        "w_bar": None, "w_hist_status": "", "w_ok": False,
     }
 
     closes = list(daily_closes)
@@ -79,6 +96,19 @@ def _macd_row(kind: str, symbol: str, name: str,
         "hist_status": _hist_status(hist, prev),   # 柱狀體前一日狀態比較
         "ok": True,
     })
+
+    # ── 週 MACD：本週（成形中）柱狀體 vs 前一完整週 ─────────
+    w_closes = _weekly_closes(daily_dates, daily_closes, current_price)
+    if len(w_closes) >= MACD_MIN_BARS:
+        wdf = calc_macd(pd.Series(w_closes), fast=MACD_FAST, slow=MACD_SLOW, signal=MACD_SIGNAL)
+        w_hist = float(wdf["histogram"].iloc[-1])
+        w_prev = float(wdf["histogram"].iloc[-2])
+        base.update({
+            "w_histogram": w_hist, "w_prev_histogram": w_prev,
+            "w_bar": "red" if w_hist > 0 else "green",
+            "w_hist_status": _hist_status(w_hist, w_prev),   # 柱狀體前一週狀態比較
+            "w_ok": True,
+        })
     return base
 
 
@@ -89,11 +119,14 @@ def get_macd_display() -> list[dict]:
     """
     rows = [
         _macd_row("index", "TAIEX", "加權指數",
-                  MARKET_STATE.taiex_daily_closes, MARKET_STATE.taiex_close),
+                  MARKET_STATE.taiex_daily_closes, MARKET_STATE.taiex_daily_dates,
+                  MARKET_STATE.taiex_close),
         _macd_row("index", "OTC", "櫃買指數",
-                  MARKET_STATE.otc_daily_closes, MARKET_STATE.otc_close),
+                  MARKET_STATE.otc_daily_closes, MARKET_STATE.otc_daily_dates,
+                  MARKET_STATE.otc_close),
     ]
     for code, state in list(STOCK_STORE.items()):   # 快照：sync 可能同時增減
         rows.append(_macd_row("stock", code, state.name,
-                              state.daily_closes, state.latest_close))
+                              state.daily_closes, state.daily_dates,
+                              state.latest_close))
     return rows

@@ -22,7 +22,11 @@ MORNING_END   = time(10, 30)   # （保留）同時段均量終點
 MACD_FAST   = 12
 MACD_SLOW   = 26
 MACD_SIGNAL = 9
-MACD_MIN_BARS = 40
+MACD_MIN_BARS = 40   # 日 / 週 MACD 共用的最少 K 棒根數
+
+# 盤前 kbars 抓取的日曆天數。週 MACD 需 ≥MACD_MIN_BARS 根週 K（約 40 週），
+# 320 天約 45 週，留有假日緩衝；拉長會等比增加盤前預取時間。
+KBAR_FETCH_DAYS = 320
 
 # ── 乖離率均線天數（模組五）──────────────────────────────
 BIAS_PERIODS = (5, 10, 20)   # 股價對 5 / 10 / 20 日均線乖離率

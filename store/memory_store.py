@@ -22,6 +22,7 @@ class StockState:
     histogram: float = 0.0
     prev_histogram: float = 0.0
     daily_closes: list = field(default_factory=list)   # 過去完整交易日收盤（升冪）
+    daily_dates: list = field(default_factory=list)    # 對應日期（date，升冪；供日轉週）
 
     # 共用
     latest_close: float = 0.0
@@ -42,6 +43,8 @@ class MarketState:
     # 模組三：指數 MACD 用的過去日收（升冪，盤前抓）
     taiex_daily_closes: list = field(default_factory=list)
     otc_daily_closes: list = field(default_factory=list)
+    taiex_daily_dates: list = field(default_factory=list)   # 對應日期（供日轉週）
+    otc_daily_dates: list = field(default_factory=list)
 
     # 模組一：指數量能 {"TAIEX"/"OTC": {v5d, curve, today_vol, change_rate}}
     index_vol: dict = field(default_factory=dict)
@@ -87,6 +90,10 @@ class MarketState:
 
     last_scanner_update: datetime = field(default_factory=datetime.now)
 
+    # 資料更新健康狀態：{來源: {"time": datetime, "msg": str}}
+    # 各抓取函式失敗時寫入、成功時移除；dash 畫面據此顯示警示橫幅
+    data_errors: dict = field(default_factory=dict)
+
     # 流量用量（api.usage）— 監控當日 API 流量是否逼近上限
     usage_bytes: int = 0            # 今日已用 bytes
     usage_limit_bytes: int = 0      # 今日上限 bytes（依交易量 500MB~10GB）
@@ -98,3 +105,15 @@ class MarketState:
 # ── 全域單例 ─────────────────────────────────────────────
 STOCK_STORE: dict[str, StockState] = {}
 MARKET_STATE = MarketState()
+
+
+def report_data_error(source: str, msg) -> None:
+    """記錄某來源抓取失敗（畫面警示用）。msg 過長時截斷。"""
+    MARKET_STATE.data_errors[source] = {
+        "time": datetime.now(), "msg": str(msg)[:120],
+    }
+
+
+def clear_data_error(source: str) -> None:
+    """某來源抓取成功後移除警示。"""
+    MARKET_STATE.data_errors.pop(source, None)

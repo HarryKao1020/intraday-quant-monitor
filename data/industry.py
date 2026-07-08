@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from store.memory_store import MARKET_STATE
+from store.memory_store import MARKET_STATE, report_data_error, clear_data_error
 from data.session import get_api
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -157,7 +157,9 @@ def update_industry_flow() -> None:
         snaps = api.snapshots(_contracts(api))
     except Exception as e:
         print(f"[industry] snapshots 失敗: {e}")
+        report_data_error("族群金流", e)
         return
+    clear_data_error("族群金流")
 
     by_code = {s.code: s for s in snaps}
     rows = []

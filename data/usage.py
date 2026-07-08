@@ -1,7 +1,7 @@
 # data/usage.py
 from datetime import datetime
 
-from store.memory_store import MARKET_STATE
+from store.memory_store import MARKET_STATE, report_data_error, clear_data_error
 from data.session import get_api
 
 
@@ -19,5 +19,7 @@ def update_usage() -> None:
         MARKET_STATE.usage_remaining_bytes = int(u.remaining_bytes)
         MARKET_STATE.usage_connections     = int(u.connections)
         MARKET_STATE.last_usage_update     = datetime.now()
+        clear_data_error("API 流量")
     except Exception as e:
         print(f"[usage] 查詢失敗: {e}")
+        report_data_error("API 流量", e)

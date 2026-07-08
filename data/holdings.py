@@ -15,7 +15,7 @@ from pathlib import Path
 import shioaji as sj
 from dotenv import load_dotenv
 
-from store.memory_store import STOCK_STORE, MARKET_STATE
+from store.memory_store import STOCK_STORE, MARKET_STATE, report_data_error, clear_data_error
 from data.session import get_api
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -191,7 +191,9 @@ def sync_holdings() -> None:
         watch = get_stock_futures_watchlist(verbose=False)
     except Exception as e:
         print(f"[holdings] 同步讀取部位失敗: {e}")
+        report_data_error("部位同步", e)
         return
+    clear_data_error("部位同步")
 
     _apply_holdings(watch)
 
@@ -215,5 +217,7 @@ def update_holdings_volume() -> None:
                 st.today_total_vol = int(s.total_volume)
                 st.latest_close = float(s.close)
                 st.change_rate = float(s.change_rate)   # 今日漲跌幅 %
+        clear_data_error("持股量能")
     except Exception as e:
         print(f"[holdings] 量能更新失敗: {e}")
+        report_data_error("持股量能", e)

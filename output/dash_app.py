@@ -125,6 +125,23 @@ def _modhead(tag, title, status, status_color):
     ])
 
 
+# ── 資料更新警示（任一來源抓取失敗 / 行情停更時顯示）────
+def render_alert_banner():
+    msgs = []
+    # 行情排程停更偵測：例外會進 data_errors，這裡抓「卡住沒回來」的情況
+    lag = (datetime.now() - MARKET_STATE.last_scanner_update).total_seconds()
+    if lag > SCANNER_INTERVAL_SEC * 3:
+        msgs.append(f"行情已 {int(lag // 60)} 分鐘未更新（排程卡住或連線中斷）")
+    for src, info in sorted(MARKET_STATE.data_errors.items()):
+        msgs.append(f"{src}更新失敗 {info['time']:%H:%M:%S}｜{info['msg']}")
+    if not msgs:
+        return []
+    return [html.Div(className="alert-banner", children=[
+        html.Div(f"⚠ 資料更新異常（{len(msgs)}）", className="alert-title"),
+        *[html.Div(m) for m in msgs],
+    ])]
+
+
 # ── API 流量 ──────────────────────────────────────────────
 def render_usage_lines():
     u = get_usage()
@@ -324,19 +341,36 @@ _HIST_STYLE = {
     "翻綠": (DOWN, True), "綠柱增長": (DOWN, True), "綠柱縮短": (DOWN, False),
 }
 
+# 週柱狀體狀態 → 帶盤勢註解的顯示文字（翻紅/翻綠沿用原字）
+_W_HIST_LABEL = {
+    "紅柱增長": "紅柱增長(多頭延續)",
+    "紅柱縮短": "！紅柱縮短(多頭震盪或回檔)",
+    "綠柱增長": "！綠柱增長(大回檔或空頭)",
+    "綠柱縮短": "綠柱縮短(反彈或新的一波)",
+}
+
 
 def _macd_emit(r):
     label = r["name"] if r["kind"] == "index" else f"{r['symbol']} {r['name']}"
     if not r["ok"]:
         return _trow(_col(label, 15, "left", TEXT), _col("資料不足", 20, "left", FAINT))
-    bar_col = UP if r["bar"] == "red" else DOWN     # 紅柱（多）/ 綠柱（空）
     scol, sbold = _HIST_STYLE.get(r["hist_status"], (DIM, False))
+    if r["w_ok"]:   # 週線柱狀體狀態（帶盤勢註解，不顯示數值）
+        wscol, wsbold = _HIST_STYLE.get(r["w_hist_status"], (DIM, False))
+        w_label = _W_HIST_LABEL.get(r["w_hist_status"], r["w_hist_status"])
+        w_cells = (
+            _col("", 2), _col(w_label, 26, "left", wscol, bold=wsbold),
+        )
+    else:           # 週 K 根數不足
+        w_cells = (
+            _col("", 2), _col("—", 26, "left", FAINT),
+        )
     return _trow(
         _col(label, 15, "left", CODE if r["kind"] == "index" else TEXT),
-        _col(f"{r['dif']:+.2f}", 10, "right", TEXT),        # DIF 數值
-        _col(f"{r['macd']:+.2f}", 10, "right", TEXT),       # MACD 數值（訊號線）
-        _col(f"{r['histogram']:+.2f}", 10, "right", bar_col, bold=True),  # 柱狀體
-        _col("", 2), _col(r["hist_status"], 12, "left", scol, bold=sbold),  # 前日狀態
+        _col(f"{r['dif']:+.2f}", 10, "right", DOWN if r["dif"] < 0 else TEXT),    # DIF（負值綠字）
+        _col(f"{r['macd']:+.2f}", 10, "right", DOWN if r["macd"] < 0 else TEXT),  # MACD（負值綠字）
+        _col("", 2), _col(r["hist_status"], 14, "left", scol, bold=sbold),  # 日柱狀體狀態
+        *w_cells,
     )
 
 
@@ -347,13 +381,14 @@ def render_module3_lines():
     lines = [_modhead("MOD.03", "MACD 狀態", stag, ACCENT if n_ok else AMBER)]
     lines.append(_trow(
         _col("標的", 15, "left", DIM), _col("DIF", 10, "right", DIM),
-        _col("MACD", 10, "right", DIM), _col("柱狀體", 10, "right", DIM),
-        _col("", 2), _col("前日狀態", 12, "left", DIM),
+        _col("MACD", 10, "right", DIM),
+        _col("", 2), _col("日柱狀體狀態", 14, "left", DIM),
+        _col("", 2), _col("週柱狀體狀態", 26, "left", DIM),
     ))
     for r in rows:                       # 指數：加權 / 櫃買
         if r["kind"] == "index":
             lines.append(_macd_emit(r))
-    lines.append(_line(_sp("  " + "─" * 42, FAINT)))   # 區分 指數 / 持股
+    lines.append(_line(_sp("  " + "─" * 56, FAINT)))   # 區分 指數 / 持股
     for r in rows:                       # 持股
         if r["kind"] == "stock":
             lines.append(_macd_emit(r))
@@ -670,6 +705,8 @@ def _col_cap(text):
 
 def render_screen_body(period="day"):
     return [
+        # 警示：任一資料來源抓取失敗時置頂顯示
+        *render_alert_banner(),
         # 流量：整列
         html.Div(render_usage_lines(), className="traffic"),
         # 左：持股狀態（MOD.01/03/05）｜ 右：大盤盤況（MOD.02/04）
@@ -763,6 +800,11 @@ html,body{margin:0;padding:0;background:#0a0e14;}
 /* 背景動畫實作於 canvas（#bgcv）+ 模板底部的 <script> */
 .screen-body div{line-height:1.75;}
 .traffic{margin-bottom:10px;}
+.alert-banner{background:rgba(214,74,64,0.14);border:1px solid #b8433b;border-radius:8px;
+  padding:8px 14px;margin:10px 0 4px;color:#f0716b;font-size:13px;line-height:1.7;
+  animation:alertblink 2.2s ease-in-out infinite;}
+.alert-banner .alert-title{font-weight:700;letter-spacing:0.05em;}
+@keyframes alertblink{0%,100%{border-color:#b8433b;}50%{border-color:#f0716b;}}
 .cols{display:flex;gap:40px;}
 .col-left{flex:1.1;min-width:0;}
 .col-right{flex:1;min-width:0;}
