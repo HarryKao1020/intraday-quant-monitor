@@ -129,12 +129,12 @@ def get_stock_futures_watchlist(verbose: bool = True) -> dict[str, str]:
 
     try:
         api = _get_prod_api()
-        positions = api.list_positions(api.futopt_account)
+        positions = api.list_positions(api.futopt_account, timeout=30_000)
     except Exception as e:
         print(f"[holdings] 部位查詢失敗（{e}），重連中…")
         logout_prod()
         api = _get_prod_api()
-        positions = api.list_positions(api.futopt_account)
+        positions = api.list_positions(api.futopt_account, timeout=30_000)
 
     _collect_positions(api, positions)   # 模組七：庫存帳務明細
     watch: dict[str, str] = {}

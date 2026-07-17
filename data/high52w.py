@@ -1,11 +1,14 @@
 # data/high52w.py
 """
-建立全市場「52 週（前一年）最高價」表，供模組六判定是否創年新高。
+建立全市場「52 週（前一年）最高價」表 + 各檔近 N 日收盤序列。
+供模組六（創年新高）與模組十一（破月／季／半年線家數）使用。
 
 - 用 daily_quotes 逐日抓全市場 OHLC，取每檔在 [今天-365, 昨天] 的最高 High
   及該高點「最近一次出現的日期」（供計算隔幾個交易日創高）。
+- 同一份資料順便留下每檔最近 CLOSE_TAIL_LEN 個日收（升冪，不含今天），
+  模組十一據此算 20/60/120 日均線，不需額外 API 呼叫。
 - 另存年內全部交易日列表（升冪），計算間隔用。
-- 每日快取到 cache/high52w2_<date>.json：當天首次建約 1~2 分鐘，之後秒載入。
+- 每日快取到 cache/high52w3_<date>.json：當天首次建約 1~2 分鐘，之後秒載入。
 - 以獨立 sim session 於背景執行，不與主連線／排程搶用 API。
 """
 import datetime as dt
@@ -18,19 +21,22 @@ import shioaji as sj
 from dotenv import load_dotenv
 
 from store.memory_store import MARKET_STATE
+from config import CLOSE_TAIL_LEN
 
 _ROOT = Path(__file__).resolve().parent.parent
 _CACHE_DIR = _ROOT / "cache"
 
 
 def _cache_path(today: dt.date) -> Path:
-    return _CACHE_DIR / f"high52w2_{today.isoformat()}.json"
+    return _CACHE_DIR / f"high52w3_{today.isoformat()}.json"
 
 
-def _build(api, today: dt.date) -> tuple[dict, list]:
+def _build(api, today: dt.date) -> tuple[dict, list, dict]:
     """
     逐日抓 daily_quotes。
-    回傳 ({code: [前一年最高High, 該高點最近日期ISO]}, [交易日ISO 升冪])。
+    回傳 ({code: [前一年最高High, 該高點最近日期ISO]},
+          [交易日ISO 升冪],
+          {code: [近 CLOSE_TAIL_LEN 個日收，升冪]})。
     """
     start = today - dt.timedelta(days=365)
     frames = []
@@ -39,30 +45,37 @@ def _build(api, today: dt.date) -> tuple[dict, list]:
         try:
             dq = api.daily_quotes(date=d)
             df = pd.DataFrame(dq.dict())
-            if not df.empty and "High" in df:
-                frames.append(df[["Code", "Date", "High"]])
+            if not df.empty and "High" in df and "Close" in df:
+                frames.append(df[["Code", "Date", "High", "Close"]])
         except Exception:
             pass
         d -= dt.timedelta(days=1)
 
     if not frames:
-        return {}, []
+        return {}, [], {}
     alld = pd.concat(frames, ignore_index=True)
-    alld = alld[alld["High"] > 0]
     alld["Date"] = alld["Date"].astype(str)
 
-    mx = alld.groupby("Code")["High"].max().rename("mx")
-    merged = alld.merge(mx, on="Code")
+    hi = alld[alld["High"] > 0]
+    mx = hi.groupby("Code")["High"].max().rename("mx")
+    merged = hi.merge(mx, on="Code")
     # 高點若出現多次，取「最近一次」日期（今天突破的就是最近那次前高）
     hit_date = merged[merged["High"] == merged["mx"]].groupby("Code")["Date"].max()
 
     highs = {c: [float(v), hit_date.get(c, "")] for c, v in mx.items()}
-    dates = sorted(alld["Date"].unique().tolist())
-    return highs, dates
+    dates = sorted(hi["Date"].unique().tolist())
+
+    # 每檔最近 CLOSE_TAIL_LEN 個日收（升冪），供均線用
+    cl = alld[alld["Close"] > 0].sort_values("Date")
+    tails = {
+        code: [float(v) for v in g["Close"].tail(CLOSE_TAIL_LEN)]
+        for code, g in cl.groupby("Code")
+    }
+    return highs, dates, tails
 
 
 def build_high52w() -> None:
-    """背景建立/載入 52 週高點表，寫入 MARKET_STATE（設 high52w_ready）。"""
+    """背景建立/載入 52 週高點表 + 日收序列，寫入 MARKET_STATE（設 high52w_ready）。"""
     today = dt.date.today()
     path = _cache_path(today)
 
@@ -72,19 +85,21 @@ def build_high52w() -> None:
             data = json.loads(path.read_text())
             MARKET_STATE.high52w = data["highs"]
             MARKET_STATE.high52w_dates = data["dates"]
+            MARKET_STATE.close_tails = data.get("tails", {})
             MARKET_STATE.high52w_ready = True
-            print(f"[high52w] 由快取載入 {len(MARKET_STATE.high52w)} 檔 52 週高點")
+            print(f"[high52w] 由快取載入 {len(MARKET_STATE.high52w)} 檔 52 週高點、"
+                  f"{len(MARKET_STATE.close_tails)} 檔日收序列")
             return
         except Exception:
             pass
 
     load_dotenv(_ROOT / ".env")
-    print("[high52w] 建立全市場 52 週高點表（約 1~2 分鐘，僅每日首次）…")
+    print("[high52w] 建立全市場 52 週高點表 + 日收序列（約 1~2 分鐘，僅每日首次）…")
     api = sj.Shioaji(simulation=True)   # 獨立行情連線
     try:
         api.login(os.environ["SJ_API_KEY"], os.environ["SJ_SECRET_KEY"],
                   contracts_timeout=10_000)
-        highs, dates = _build(api, today)
+        highs, dates, tails = _build(api, today)
     except Exception as e:
         print(f"[high52w] 建立失敗: {e}")
         return
@@ -100,13 +115,14 @@ def build_high52w() -> None:
 
     MARKET_STATE.high52w = highs
     MARKET_STATE.high52w_dates = dates
+    MARKET_STATE.close_tails = tails
     MARKET_STATE.high52w_ready = True
     try:
         _CACHE_DIR.mkdir(exist_ok=True)
-        path.write_text(json.dumps({"highs": highs, "dates": dates}))
-        for old in _CACHE_DIR.glob("high52w*.json"):   # 清舊快取（含 v1）
+        path.write_text(json.dumps({"highs": highs, "dates": dates, "tails": tails}))
+        for old in _CACHE_DIR.glob("high52w*.json"):   # 清舊快取（含舊版格式）
             if old != path:
                 old.unlink()
     except Exception:
         pass
-    print(f"[high52w] 完成，{len(highs)} 檔")
+    print(f"[high52w] 完成，{len(highs)} 檔高點、{len(tails)} 檔日收序列")

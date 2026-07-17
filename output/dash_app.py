@@ -32,6 +32,7 @@ from data.holdings import (
 )
 from data.high52w import build_high52w
 from data.regulatory import update_regulatory
+from data.performance import build_performance, refresh_today_point, daily_perf_job
 from data.industry import update_industry_flow, build_week_baseline
 from compute.industry_flow import get_industry_display, get_market_total
 from compute.market_breadth import calc_market_breadth
@@ -41,8 +42,12 @@ from compute.volume_surge import calc_volume_surge
 from compute.macd import get_macd_display
 from compute.bias import get_bias_display
 from compute.new_high import get_new_highs
+from compute.ma_break import get_ma_break, get_ma_bias_top
 from store.memory_store import MARKET_STATE
-from config import SCANNER_INTERVAL_SEC, HIGH_PRICE_COUNT, BIAS_PERIODS, HOLDINGS_SYNC_SEC
+from config import (
+    SCANNER_INTERVAL_SEC, HIGH_PRICE_COUNT, BIAS_PERIODS, HOLDINGS_SYNC_SEC,
+    PERF_REFRESH_SEC, PERF_SNAPSHOT_TIME, MA_BREAK_PERIODS,
+)
 
 # ── 配色（深色網頁，柔和）────────────────────────────────
 TEXT   = "#e6edf3"   # 主要文字（白）
@@ -334,11 +339,78 @@ def render_module6_lines():
     return lines
 
 
+# ── 模組十一：成值前200 站上月／季／半年線家數 ───────────
+def render_module11_lines():
+    d = get_ma_break()
+    if not d["ready"]:
+        return [_modhead("MOD.11", "成值前200均線上家數", "建立中", AMBER),
+                _line(_sp("  日收序列建立中（隨 52 週高點表一併產生）…", DIM))]
+    rows = d["rows"]
+    newly_total = sum(r["newly"] for r in rows)
+    stag = f"今日新站上 {newly_total}" if newly_total else "無新站上"
+    lines = [_modhead("MOD.11", "成值前200均線上家數",
+                      stag, UP if newly_total else ACCENT)]
+    lines.append(_trow(
+        _col("均線", 12, "left", DIM), _col("線上家數", 12, "right", DIM),
+        _col("佔比", 9, "right", DIM),
+        _col("平均乖離", 11, "right", DIM), _col("", 3),
+        _col("今日站上", 10, "right", DIM),
+    ))
+    for r in rows:
+        # 線上佔比越高＝盤面越強：過半亮紅（漲色）加粗
+        bcol = UP if r["valid"] and r["above"] * 2 > r["valid"] else TEXT
+        gcol = UP if r["bias"] > 0 else (DOWN if r["bias"] < 0 else DIM)
+        ncol, nbold = (UP, True) if r["newly"] else (DIM, False)
+        # 可點擊列：點擊開啟該均線乖離最大前 20 檔 modal
+        lines.append(html.Div([
+            _col(f"{r['label']}({r['n']}MA)", 12, "left", TEXT),
+            _col(f"{r['above']} / {r['valid']}", 12, "right", bcol, bold=True),
+            _col(f"{r['pct']:.0f}%", 9, "right", bcol),
+            _col(f"{r['bias']:+.2f}%", 11, "right", gcol),
+            _col("", 3),
+            _col(f"{r['newly']}", 10, "right", ncol, bold=nbold),
+        ], id={"type": "ma-row", "index": r["n"]}, n_clicks=0,
+           className="grp-row",
+           style={"whiteSpace": "nowrap", "paddingLeft": "2px"}))
+    return lines
+
+
+# ── 模組十一 modal：乖離最大前 20 檔 ──────────────────────
+_MA_NAME = dict(MA_BREAK_PERIODS)   # {20: "月線", 60: "季線", 120: "半年線"}
+
+
+def render_ma_bias_modal_body(n: int):
+    items = get_ma_bias_top(n, 20)
+    if not items:
+        return [html.Div("資料載入中…", style={"color": DIM})]
+    lines = [_trow(
+        _col("代號", 7, "left", DIM), _col("股名", 13, "left", DIM),
+        _col("現價", 10, "right", DIM), _col(f"{n}MA", 10, "right", DIM),
+        _col("乖離", 10, "right", DIM),
+    )]
+    for s in items:
+        gcol = UP if s["bias"] > 0 else (DOWN if s["bias"] < 0 else DIM)
+        lines.append(_trow(
+            _col(s["code"], 7, "left", CODE),
+            _col(s["name"], 13, "left", TEXT),
+            _col(f"{s['close']:,.2f}", 10, "right", TEXT),
+            _col(f"{s['ma']:,.2f}", 10, "right", TEXT),
+            _col(f"{s['bias']:+.2f}%", 10, "right", gcol, bold=True),
+        ))
+    return lines
+
+
 # ── 模組三：MACD 狀態（加權 / 櫃買 + 持股）────────────────
 # 柱狀體前一日狀態比較 → (顏色, 是否加粗)。增長/翻轉加粗，縮短不加粗。
 _HIST_STYLE = {
     "翻紅": (UP, True),   "紅柱增長": (UP, True),   "紅柱縮短": (UP, False),
     "翻綠": (DOWN, True), "綠柱增長": (DOWN, True), "綠柱縮短": (DOWN, False),
+}
+
+# 日柱狀體狀態 → 帶盤勢註解的顯示文字（其餘沿用原字）
+_D_HIST_LABEL = {
+    "紅柱縮短": "紅柱縮短(注意高檔反轉)",
+    "綠柱縮短": "綠柱縮短(注意低檔反彈)",
 }
 
 # 週柱狀體狀態 → 帶盤勢註解的顯示文字（翻紅/翻綠沿用原字）
@@ -369,7 +441,7 @@ def _macd_emit(r):
         _col(label, 15, "left", CODE if r["kind"] == "index" else TEXT),
         _col(f"{r['dif']:+.2f}", 10, "right", DOWN if r["dif"] < 0 else TEXT),    # DIF（負值綠字）
         _col(f"{r['macd']:+.2f}", 10, "right", DOWN if r["macd"] < 0 else TEXT),  # MACD（負值綠字）
-        _col("", 2), _col(r["hist_status"], 14, "left", scol, bold=sbold),  # 日柱狀體狀態
+        _col("", 2), _col(_D_HIST_LABEL.get(r["hist_status"], r["hist_status"]), 24, "left", scol, bold=sbold),  # 日柱狀體狀態（帶盤勢註解）
         *w_cells,
     )
 
@@ -382,7 +454,7 @@ def render_module3_lines():
     lines.append(_trow(
         _col("標的", 15, "left", DIM), _col("DIF", 10, "right", DIM),
         _col("MACD", 10, "right", DIM),
-        _col("", 2), _col("日柱狀體狀態", 14, "left", DIM),
+        _col("", 2), _col("日柱狀體狀態", 24, "left", DIM),
         _col("", 2), _col("週柱狀體狀態", 26, "left", DIM),
     ))
     for r in rows:                       # 指數：加權 / 櫃買
@@ -523,6 +595,123 @@ def render_module9_lines():
             _col(f"{p['start']} ~ {p['end']}", 26, "left", TEXT),
             _col(p["interval"], 10, "left", AMBER, bold=True),
         ))
+    return lines
+
+
+# ── 模組十二：淨值績效曲線（2026 起每日，vs 加權/櫃買）────
+# 三色經 dataviz 驗證（深色底 CVD ΔE 100、對比 ≥3:1）：
+# 我的績效=藍、加權=琥珀、櫃買=紫；不用紅綠，避免與漲跌語意衝突。
+_PERF_MINE  = "#3d8fd6"
+_PERF_TAIEX = "#b3841f"
+_PERF_OTC   = "#9a63e8"
+
+
+def render_module12_lines():
+    p = MARKET_STATE.perf
+    if not p.get("ready"):
+        return [_modhead("MOD.12", "淨值績效曲線", "建立中", AMBER),
+                _line(_sp("  帳務歷史重建中（首次約 1~2 分鐘）…", DIM))]
+    ytd = p["mine"][-1]
+    ycol = UP if ytd > 0 else (DOWN if ytd < 0 else DIM)
+    # 期初淨值非正 = 期間外部出入金未登錄，報酬率會失真 → 顯眼警示
+    flows_missing = p["base_nv"] <= 0
+    if flows_missing:
+        lines = [_modhead("MOD.12", "淨值績效曲線", "待補出入金", AMBER),
+                 _line(_sp("  ⚠ 回推期初淨值為負：期間有外部出入金未登錄，"
+                           "請填 cache/capital_flows.json（入金為正）", AMBER))]
+    else:
+        lines = [_modhead("MOD.12", "淨值績效曲線", f"今年 {ytd:+.2f}%", ycol)]
+
+    x = p["dates"]
+    fig = go.Figure()
+    for name, ys, color, width in [
+        ("我的績效", p["mine"],  _PERF_MINE,  2.6),
+        ("加權指數", p["taiex"], _PERF_TAIEX, 1.6),
+        ("櫃買指數", p["otc"],   _PERF_OTC,   1.6),
+    ]:
+        fig.add_trace(go.Scatter(
+            x=x, y=[round(v, 2) for v in ys], mode="lines", name=name,
+            line=dict(color=color, width=width),
+            hovertemplate="%{y:+.2f}%<extra>" + name + "</extra>",
+        ))
+    # 月初刻度（category 軸自動跳過非交易日，曲線才連貫）
+    ticks = []
+    seen = set()
+    for d in x:
+        if d[:7] not in seen:
+            seen.add(d[:7])
+            ticks.append(d)
+    # 基準月只有年底一兩個點，刻度會跟下一個月重疊 → 捨去
+    if len(ticks) >= 2 and x.index(ticks[1]) - x.index(ticks[0]) < 5:
+        ticks = ticks[1:]
+    fig.update_layout(
+        height=380, margin=dict(l=10, r=16, t=8, b=10),
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color=TEXT, family=FONT, size=11),
+        hovermode="x unified",
+        hoverlabel=dict(bgcolor="#161b22", bordercolor="#2b3a55",
+                        font=dict(color=TEXT, family=FONT, size=12)),
+        legend=dict(orientation="h", x=0, y=1.08, bgcolor="rgba(0,0,0,0)",
+                    font=dict(color=TEXT)),
+        xaxis=dict(type="category", tickvals=ticks,
+                   ticktext=[t[:7] for t in ticks],
+                   showgrid=False, tickfont=dict(color=DIM),
+                   linecolor=FAINT),
+        yaxis=dict(ticksuffix="%", tickfont=dict(color=DIM),
+                   gridcolor="#21262d", zeroline=True,
+                   zerolinecolor=FAINT, zerolinewidth=1),
+    )
+    lines.append(dcc.Graph(figure=fig, config={"displayModeBar": False}))
+    # 最新讀值（一行一項；指數行附年初首個交易日收盤與目前盤中價）
+    def _idx_summary(dot, name, pct, y0_date, y0, live):
+        cells = [_sp("  ● ", dot), _sp(f"{name} ", DIM),
+                 _sp(f"{pct:+.2f}%", TEXT)]
+        if y0 > 0:
+            md = f"{int(y0_date[5:7])}/{int(y0_date[8:10])}"   # 例：1/2
+            cells += [
+                _sp(f"   年初{md} ", DIM), _sp(f"{y0:,.2f}", TEXT),
+                _sp("  →  現在 ", DIM),
+                _sp(f"{live:,.2f}" if live > 0 else "—",
+                    TEXT if live > 0 else FAINT, bold=live > 0),
+            ]
+        return _line(*cells)
+
+    m, t, o = p["mine"][-1], p["taiex"][-1], p["otc"][-1]
+    # 最大回檔：淨值財富指數相對歷史高點的最大回落（含今日盤中值），
+    # 並記下該段的高點日～谷底日
+    peak, peak_i, mdd, mdd_span = 1.0, 0, 0.0, None
+    for i, v in enumerate(p["mine"]):
+        w = 1 + v / 100
+        if w > peak:
+            peak, peak_i = w, i
+        dd = (w / peak - 1) * 100
+        if dd < mdd:
+            mdd, mdd_span = dd, (p["dates"][peak_i], p["dates"][i])
+
+    def _md(iso):   # "2026-05-19" → "5/19"
+        return f"{int(iso[5:7])}/{int(iso[8:10])}"
+
+    mdd_cells = [_sp("   MDD ", DIM), _sp(f"{mdd:.2f}%", DOWN if mdd < 0 else TEXT)]
+    if mdd_span:
+        mdd_cells.append(_sp(f" ({_md(mdd_span[0])}~{_md(mdd_span[1])})", FAINT))
+    lines.append(_line(
+        _sp("  ● ", _PERF_MINE), _sp("我的績效 ", DIM),
+        _sp(f"{m:+.2f}%", TEXT, bold=True),
+        *mdd_cells,
+    ))
+    lines.append(_idx_summary(_PERF_TAIEX, "加權", t,
+                              p.get("taiex_y0_date", ""), p.get("taiex_y0", 0.0),
+                              MARKET_STATE.taiex_close))
+    lines.append(_idx_summary(_PERF_OTC, "櫃買", o,
+                              p.get("otc_y0_date", ""), p.get("otc_y0", 0.0),
+                              MARKET_STATE.otc_close))
+    lines.append(_line(
+        _sp("  淨值 ", DIM), _sp(f"{p['nv_today']:,.0f}", TEXT, bold=True),
+        _sp("   期初 ", DIM), _sp(f"{p['base_nv']:,.0f}", TEXT),
+        _sp("   今年損益 ", DIM),
+        _sp(f"{p['nv_today'] - p['base_nv']:+,.0f}", ycol, bold=True),
+        _sp(f"   更新 {p['asof']:%H:%M}", FAINT),
+    ))
     return lines
 
 
@@ -718,6 +907,7 @@ def render_screen_body(period="day"):
                 _cell(render_module5_lines()),
                 _cell(render_module7_lines()),
                 _cell(render_module9_lines()),
+                _cell(render_module12_lines()),
             ]),
             html.Div(className="col-right", children=[
                 _col_cap("大盤盤況 · MARKET"),
@@ -725,6 +915,7 @@ def render_screen_body(period="day"):
                 _cell(render_limit_lines()),
                 _cell(render_module8_lines()),
                 _cell(render_module6_lines()),
+                _cell(render_module11_lines()),
                 _cell(render_module10_lines(period)),
             ]),
         ]),
@@ -958,6 +1149,20 @@ def create_app() -> Dash:
 
     @app.callback(
         Output("grp-open", "data", allow_duplicate=True),
+        Input({"type": "ma-row", "index": ALL}, "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def _ma_click_row(rows):
+        # 模組十一均線列 → 開啟該均線乖離前 20 modal（grp-open 存 "ma:<n>"）
+        trig = ctx.triggered_id
+        if isinstance(trig, dict) and trig.get("type") == "ma-row":
+            for spec, val in zip(ctx.inputs_list[0], rows):
+                if spec["id"]["index"] == trig["index"] and val:
+                    return f"ma:{trig['index']}"
+        return no_update
+
+    @app.callback(
+        Output("grp-open", "data", allow_duplicate=True),
         Input("grp-modal-close", "n_clicks"),
         prevent_initial_call=True,
     )
@@ -988,6 +1193,10 @@ def create_app() -> Dash:
     def _grp_modal(group, _, period):
         if not group:
             return {"display": "none"}, "", []
+        if isinstance(group, str) and group.startswith("ma:"):
+            n = int(group[3:])
+            title = f"{_MA_NAME.get(n, '')}({n}MA) 乖離最大前 20 · 成值前200"
+            return {"display": "flex"}, title, render_ma_bias_modal_body(n)
         period = period or "day"
         title = group if period == "day" else f"{group} · {_PERIOD_LABEL.get(period, '')}"
         return {"display": "flex"}, title, render_group_modal_body(group, period)
@@ -1018,12 +1227,20 @@ def run(port: int = 8050, open_browser: bool = True) -> None:
                   id="market", max_instances=1, coalesce=True)
     sched.add_job(sync_holdings, "interval", seconds=HOLDINGS_SYNC_SEC,
                   id="holdings_sync", max_instances=1, coalesce=True)
+    # 模組十二：盤中輕量更新今日點；收盤後快照真實淨值 + 重建曲線
+    sched.add_job(refresh_today_point, "interval", seconds=PERF_REFRESH_SEC,
+                  id="perf_today", max_instances=1, coalesce=True)
+    sched.add_job(daily_perf_job, "cron",
+                  hour=PERF_SNAPSHOT_TIME.hour, minute=PERF_SNAPSHOT_TIME.minute,
+                  id="perf_daily", max_instances=1, coalesce=True)
     sched.start()
     print(f"[dash] 排程啟動，行情每 {SCANNER_INTERVAL_SEC}s、部位同步每 "
           f"{HOLDINGS_SYNC_SEC}s。開啟 http://127.0.0.1:{port}")
 
     # 模組六：背景建立全市場 52 週高點表（獨立連線，不卡啟動）
     threading.Thread(target=build_high52w, daemon=True, name="high52w").start()
+    # 模組十二：背景重建淨值績效曲線（首次抓平倉明細約 1~2 分鐘，不卡啟動）
+    threading.Thread(target=build_performance, daemon=True, name="performance").start()
 
     app = create_app()
     if open_browser:

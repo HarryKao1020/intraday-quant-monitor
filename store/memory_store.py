@@ -57,10 +57,16 @@ class MarketState:
     high52w: dict = field(default_factory=dict)
     high52w_dates: list = field(default_factory=list)
     high52w_ready: bool = False
+    # 模組十一：全市場近 N 日收盤 {code: [日收升冪，不含今天]}（與 high52w 同批建立）
+    close_tails: dict = field(default_factory=dict)
 
     # 模組七：期貨庫存帳務（讀部位時一併更新，180 秒同步）
     fut_positions: list = field(default_factory=list)   # [{name,qty,avg,last,exposure,pnl},...]
     last_positions_update: datetime = field(default_factory=datetime.now)
+
+    # 模組十二：淨值績效曲線（啟動時背景重建、收盤後排程更新）
+    # {ready, dates, mine, taiex, otc, nv, nv_today, base_nv, ...}
+    perf: dict = field(default_factory=dict)
 
     # 模組八/九：處置與注意股（啟動時抓，公告類一日一更）
     punish_list: list = field(default_factory=list)   # 生效中處置 [{code,start,end,interval}]
