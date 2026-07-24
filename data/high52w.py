@@ -14,6 +14,7 @@
 import datetime as dt
 import json
 import os
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -25,6 +26,9 @@ from config import CLOSE_TAIL_LEN
 
 _ROOT = Path(__file__).resolve().parent.parent
 _CACHE_DIR = _ROOT / "cache"
+
+_FETCH_RETRIES = 3
+_FETCH_RETRY_DELAY = 2.0   # 秒，每次重試前等待
 
 
 def _cache_path(today: dt.date) -> Path:
@@ -40,16 +44,30 @@ def _build(api, today: dt.date) -> tuple[dict, list, dict]:
     """
     start = today - dt.timedelta(days=365)
     frames = []
+    failed_dates = []
     d = today - dt.timedelta(days=1)   # 從昨天往回（排除今天）
     while d >= start:
-        try:
-            dq = api.daily_quotes(date=d)
-            df = pd.DataFrame(dq.dict())
-            if not df.empty and "High" in df and "Close" in df:
-                frames.append(df[["Code", "Date", "High", "Close"]])
-        except Exception:
-            pass
+        df = None
+        last_err = None
+        for attempt in range(1, _FETCH_RETRIES + 1):
+            try:
+                dq = api.daily_quotes(date=d)
+                df = pd.DataFrame(dq.dict())
+                break
+            except Exception as e:
+                last_err = e
+                if attempt < _FETCH_RETRIES:
+                    time.sleep(_FETCH_RETRY_DELAY)
+        if df is not None and not df.empty and "High" in df and "Close" in df:
+            frames.append(df[["Code", "Date", "High", "Close"]])
+        elif last_err is not None:
+            failed_dates.append(d.isoformat())
+            print(f"[high52w] {d.isoformat()} daily_quotes 抓取失敗（重試 {_FETCH_RETRIES} 次）: {last_err}")
         d -= dt.timedelta(days=1)
+
+    if failed_dates:
+        print(f"[high52w] 共 {len(failed_dates)} 個交易日抓取失敗，"
+              f"52 週高點表可能不完整: {failed_dates}")
 
     if not frames:
         return {}, [], {}
