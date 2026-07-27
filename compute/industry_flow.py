@@ -26,11 +26,15 @@ _ROWS_BY_PERIOD = {
 }
 
 
-def get_industry_display(period: str = "day") -> list[dict]:
+SORT_KEYS = ("avg_chg", "amount")   # 可點擊表頭排序的欄位
+
+
+def get_industry_display(period: str = "day", sort_key: str = "avg_chg",
+                         sort_desc: bool = True) -> list[dict]:
     """
     族群金流監控：每族群 平均漲跌幅 / 成交金額總和 / 佔大盤+櫃買總額比例。
     day=當日；week=本週累計（漲跌幅=現價 vs 上週收）；lastweek=上週整週。
-    依平均漲跌幅降冪排序。
+    sort_key 為 avg_chg（平均漲跌幅）或 amount（成交金額），sort_desc 決定大→小 / 小→大。
     """
     rows = _ROWS_BY_PERIOD.get(period, _ROWS_BY_PERIOD["day"])()
     if not rows:
@@ -42,4 +46,5 @@ def get_industry_display(period: str = "day") -> list[dict]:
         ratio = (r["amount"] / market_total * 100.0) if market_total > 0 else None
         out.append({**r, "ratio": ratio})
 
-    return sorted(out, key=lambda x: x["avg_chg"], reverse=True)
+    key = sort_key if sort_key in SORT_KEYS else "avg_chg"
+    return sorted(out, key=lambda x: x[key], reverse=bool(sort_desc))

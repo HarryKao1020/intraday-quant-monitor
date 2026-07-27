@@ -808,8 +808,27 @@ def render_group_pie(rows, period="day"):
     return dcc.Graph(id="grp-pie", figure=fig, config={"displayModeBar": False})
 
 
-def render_module10_lines(period="day"):
-    rows = get_industry_display(period)
+_DEF_SORT = {"key": "avg_chg", "desc": True}
+
+
+def _sort_col(label, ch, key, sort):
+    """
+    模組十可點擊表頭：目前排序欄顯示 ▼(大→小) / ▲(小→大)，其餘欄顯示暗色 ⇅ 提示可點。
+    再點同一欄反轉方向，點另一欄則切過去並預設由大到小。
+    """
+    active = sort["key"] == key
+    mark = ("▼" if sort["desc"] else "▲") if active else "⇅"
+    return html.Span(
+        [html.Span(label), html.Span(mark, style={"marginLeft": "3px"})],
+        id={"type": "grp-sort", "index": key}, n_clicks=0, className="grp-sort",
+        style={"display": "inline-block", "width": f"{ch}ch", "textAlign": "right",
+               "color": ACCENT if active else DIM, "whiteSpace": "nowrap"},
+    )
+
+
+def render_module10_lines(period="day", sort=None):
+    sort = {**_DEF_SORT, **(sort or {})}
+    rows = get_industry_display(period, sort["key"], sort["desc"])
     toggle = html.Div(dcc.RadioItems(
         id="flow-radio",
         options=[{"label": " 當日", "value": "day"},
@@ -827,8 +846,10 @@ def render_module10_lines(period="day"):
     lines.append(toggle)
     lines.append(render_group_pie(rows, period))   # 圓餅：金額占全市場（含灰色其他）
     lines.append(_trow(
-        _col("族群", 32, "left", DIM), _col("平均漲跌", 9, "right", DIM),
-        _col("成交金額", 10, "right", DIM), _col("佔比", 8, "right", DIM),
+        _col("族群", 32, "left", DIM),
+        _sort_col("平均漲跌", 11, "avg_chg", sort),
+        _sort_col("成交金額", 12, "amount", sort),
+        _col("佔比", 8, "right", DIM),
     ))
     for r in rows:
         chg = r["avg_chg"]
@@ -837,8 +858,8 @@ def render_module10_lines(period="day"):
         # 可點擊列：點擊開啟該族群成分股 modal
         lines.append(html.Div([
             _col(r["group"], 32, "left", TEXT),
-            _col(f"{chg:+.2f}%", 9, "right", ccol, bold=True),
-            _col(f"{r['amount'] / 1e8:,.0f}億", 10, "right", TEXT),
+            _col(f"{chg:+.2f}%", 11, "right", ccol, bold=True),
+            _col(f"{r['amount'] / 1e8:,.0f}億", 12, "right", TEXT),
             _col(ratio_txt, 8, "right", TEXT),
         ], id={"type": "grp-row", "index": r["group"]}, n_clicks=0,
            className="grp-row",
@@ -892,7 +913,7 @@ def _col_cap(text):
     return html.Div(text, className="col-cap")
 
 
-def render_screen_body(period="day"):
+def render_screen_body(period="day", flow_sort=None):
     return [
         # 警示：任一資料來源抓取失敗時置頂顯示
         *render_alert_banner(),
@@ -916,7 +937,7 @@ def render_screen_body(period="day"):
                 _cell(render_module8_lines()),
                 _cell(render_module6_lines()),
                 _cell(render_module11_lines()),
-                _cell(render_module10_lines(period)),
+                _cell(render_module10_lines(period, flow_sort)),
             ]),
         ]),
     ]
@@ -933,6 +954,7 @@ def serve_layout():
         dcc.Store(id="boot-id", data=_BOOT_ID),                    # 載入當下的伺服器識別碼
         dcc.Store(id="grp-open", data=None),
         dcc.Store(id="flow-period", data="day"),   # 模組十：當日/本週切換
+        dcc.Store(id="flow-sort", data=dict(_DEF_SORT)),   # 模組十：表頭排序欄位/方向
         # 族群成分股 modal（點族群列開啟）
         html.Div(id="grp-modal", className="modal-bg", n_clicks=0,
                  style={"display": "none"}, children=[
@@ -1005,6 +1027,8 @@ html,body{margin:0;padding:0;background:#0a0e14;}
 .cell .modhead{margin-top:16px;}
 .grp-row{cursor:pointer;border-radius:4px;}
 .grp-row:hover{background:rgba(121,192,255,0.10);}
+.grp-sort{cursor:pointer;user-select:none;}
+.grp-sort:hover{color:#79c0ff !important;}
 .flow-toggle{color:#e6edf3;font-size:12.5px;}
 .flow-toggle input{accent-color:#5fb37a;cursor:pointer;}
 /* 族群成分股 modal */
@@ -1102,11 +1126,12 @@ def create_app() -> Dash:
         Output("screen-body", "children"),
         Input("tick", "n_intervals"),
         Input("flow-period", "data"),   # 切換當日/本週時立即重繪
+        Input("flow-sort", "data"),     # 切換族群排序時立即重繪
     )
-    def _refresh(_, period):
+    def _refresh(_, period, flow_sort):
         s = get_limit_stats()
         clock = f"現在 {datetime.now():%H:%M:%S}　·　資料更新 {s['last_update']:%H:%M:%S}"
-        return clock, render_screen_body(period or "day")
+        return clock, render_screen_body(period or "day", flow_sort)
 
     @app.callback(
         Output("flow-period", "data"),
@@ -1115,6 +1140,26 @@ def create_app() -> Dash:
     )
     def _flow_toggle(value):
         return value or "day"
+
+    @app.callback(
+        Output("flow-sort", "data"),
+        Input({"type": "grp-sort", "index": ALL}, "n_clicks"),
+        State("flow-sort", "data"),
+        prevent_initial_call=True,
+    )
+    def _flow_sort(clicks, cur):
+        # 與 grp-row 同樣的動態元件慣例：表格重繪會以 n_clicks=0 觸發，只吃真點擊（>0）
+        trig = ctx.triggered_id
+        if not (isinstance(trig, dict) and trig.get("type") == "grp-sort"):
+            return no_update
+        for spec, val in zip(ctx.inputs_list[0], clicks):
+            if spec["id"]["index"] == trig["index"] and val:
+                cur = {**_DEF_SORT, **(cur or {})}
+                key = trig["index"]
+                # 同欄再點 → 反轉方向；換欄 → 預設由大到小
+                desc = (not cur["desc"]) if cur["key"] == key else True
+                return {"key": key, "desc": desc}
+        return no_update
 
     @app.callback(
         Output("reloader", "href"),
