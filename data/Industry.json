@@ -1420,5 +1420,84 @@
             "company_name": "大東電",
             "stock_code": "1623"
         }
+    ],
+    "營建": [
+        {
+            "company_name": "興富發",
+            "stock_code": "2542"
+
+        },
+        {
+            "company_name": "潤隆",
+            "stock_code": "1808"
+        },
+        {
+            "company_name": "新美齊",
+            "stock_code": "2442"
+        },
+        {
+            "company_name": "國建",
+            "stock_code": "2501"
+        },
+        {
+            "company_name": "國產",
+            "stock_code": "2504"
+        },
+        {
+            "company_name": "中工",
+            "stock_code": "2515"
+        },
+        {
+            "company_name": "冠德",
+            "stock_code": "2520"
+        },
+        {
+            "company_name": "長虹",
+            "stock_code": "5534"
+        },
+        {
+            "company_name": "潤泰新",
+            "stock_code": "9945"
+        },
+        {
+            "company_name": "華固",
+            "stock_code": "2548"
+        },
+        {
+            "company_name": "皇翔",
+            "stock_code": "2545"
+        },
+        {
+            "company_name": "欣陸",
+            "stock_code": "3703"
+        },
+        {
+            "company_name": "達麗",
+            "stock_code": "6177"
+        },
+        {
+            "company_name": "欣巴巴",
+            "stock_code": "9906"
+        },
+        {
+            "company_name": "永信建",
+            "stock_code": "5508"
+        },
+        {
+            "company_name": "新潤",
+            "stock_code": "6186"
+        },
+        {
+            "company_name": "海悅",
+            "stock_code": "2348"
+        },
+        {
+            "company_name": "愛山林",
+            "stock_code": "2540"
+        },
+        {
+            "company_name": "櫻花建",
+            "stock_code": "2539"
+        }
     ]
 }
