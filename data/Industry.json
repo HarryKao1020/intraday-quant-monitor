@@ -1243,6 +1243,26 @@
         {
             "company_name": "慧洋-KY",
             "stock_code": "2637"
+        },
+        {
+            "company_name": "裕民",
+            "stock_code": "2606"
+        },
+        {
+            "company_name": "四維航",
+            "stock_code": "5608"
+        },
+        {
+            "company_name": "中櫃",
+            "stock_code": "2613"
+        },
+        {
+            "company_name": "台航",
+            "stock_code": "2617"
+        },
+        {
+            "company_name": "新興",
+            "stock_code": "2605"
         }
     ],
     "金融保險": [
