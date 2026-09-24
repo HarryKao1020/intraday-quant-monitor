@@ -1062,6 +1062,10 @@
         {
             "company_name": "佳凌",
             "stock_code": "4976"
+        },
+        {
+            "company_name": "今國光",
+            "stock_code": "6209"
         }
     ],
     "面板顯示器": [
@@ -1518,6 +1522,52 @@
         {
             "company_name": "櫻花建",
             "stock_code": "2539"
+        }
+    ],
+    "軟體與資安": [
+        {
+            "company_name": "精誠",
+            "stock_code": "6214"
+        },
+        {
+            "company_name": "敦陽科",
+            "stock_code": "2480"
+        },
+        {
+            "company_name": "中華資安",
+            "stock_code": "7765"
+        },
+        {
+            "company_name": "零壹",
+            "stock_code": "3029"
+        },
+        {
+            "company_name": "伊雲谷",
+            "stock_code": "6689"
+        },
+        {
+            "company_name": "華經",
+            "stock_code": "2468"
+        },
+        {
+            "company_name": "邁達特",
+            "stock_code": "6112"
+        },
+        {
+            "company_name": "驊宏資",
+            "stock_code": "6148"
+        },
+        {
+            "company_name": "安碁資訊",
+            "stock_code": "6690"
+        },
+        {
+            "company_name": "創泓科技",
+            "stock_code": "7714"
+        },
+        {
+            "company_name": "瑞祺電通",
+            "stock_code": "6416"
         }
     ]
 }
