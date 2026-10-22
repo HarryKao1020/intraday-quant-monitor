@@ -7,8 +7,9 @@
   及該高點「最近一次出現的日期」（供計算隔幾個交易日創高）。
 - 同一份資料順便留下每檔最近 CLOSE_TAIL_LEN 個日收（升冪，不含今天），
   模組十一據此算 20/60/120 日均線，不需額外 API 呼叫。
+- 近 20 日均額達 MOM_MIN_AVG_AMOUNT 的個股另存日收／日高序列，供模組十三（動能創高股）。
 - 另存年內全部交易日列表（升冪），計算間隔用。
-- 每日快取到 cache/high52w3_<date>.json：當天首次建約 1~2 分鐘，之後秒載入。
+- 每日快取到 cache/high52w4_<date>.json：當天首次建約 1~2 分鐘，之後秒載入。
 - 以獨立 sim session 於背景執行，不與主連線／排程搶用 API。
 """
 import datetime as dt
@@ -22,7 +23,9 @@ import shioaji as sj
 from dotenv import load_dotenv
 
 from store.memory_store import MARKET_STATE
-from config import CLOSE_TAIL_LEN
+from config import (
+    CLOSE_TAIL_LEN, MOM_MIN_AVG_AMOUNT, MOM_HIGH_DAYS, MOM_RET_DAYS,
+)
 
 _ROOT = Path(__file__).resolve().parent.parent
 _CACHE_DIR = _ROOT / "cache"
@@ -32,15 +35,16 @@ _FETCH_RETRY_DELAY = 2.0   # 秒，每次重試前等待
 
 
 def _cache_path(today: dt.date) -> Path:
-    return _CACHE_DIR / f"high52w3_{today.isoformat()}.json"
+    return _CACHE_DIR / f"high52w4_{today.isoformat()}.json"
 
 
-def _build(api, today: dt.date) -> tuple[dict, list, dict]:
+def _build(api, today: dt.date) -> tuple[dict, list, dict, dict]:
     """
     逐日抓 daily_quotes。
     回傳 ({code: [前一年最高High, 該高點最近日期ISO]},
           [交易日ISO 升冪],
-          {code: [近 CLOSE_TAIL_LEN 個日收，升冪]})。
+          {code: [近 CLOSE_TAIL_LEN 個日收，升冪]},
+          {code: {"close": [近 MOM_RET_DAYS 個日收], "high": [近 MOM_HIGH_DAYS 個日高]}})。
     """
     start = today - dt.timedelta(days=365)
     frames = []
@@ -59,7 +63,7 @@ def _build(api, today: dt.date) -> tuple[dict, list, dict]:
                 if attempt < _FETCH_RETRIES:
                     time.sleep(_FETCH_RETRY_DELAY)
         if df is not None and not df.empty and "High" in df and "Close" in df:
-            frames.append(df[["Code", "Date", "High", "Close"]])
+            frames.append(df[["Code", "Date", "High", "Close", "Amount"]])
         elif last_err is not None:
             failed_dates.append(d.isoformat())
             print(f"[high52w] {d.isoformat()} daily_quotes 抓取失敗（重試 {_FETCH_RETRIES} 次）: {last_err}")
@@ -70,7 +74,7 @@ def _build(api, today: dt.date) -> tuple[dict, list, dict]:
               f"52 週高點表可能不完整: {failed_dates}")
 
     if not frames:
-        return {}, [], {}
+        return {}, [], {}, {}
     alld = pd.concat(frames, ignore_index=True)
     alld["Date"] = alld["Date"].astype(str)
 
@@ -89,7 +93,17 @@ def _build(api, today: dt.date) -> tuple[dict, list, dict]:
         code: [float(v) for v in g["Close"].tail(CLOSE_TAIL_LEN)]
         for code, g in cl.groupby("Code")
     }
-    return highs, dates, tails
+
+    # 模組十三：近 20 日（到昨天）平均成交金額達標者，留日收／日高序列
+    mom = {}
+    for code, g in alld[(alld["Close"] > 0) & (alld["High"] > 0)].sort_values("Date").groupby("Code"):
+        if len(g) < 20 or g["Amount"].tail(20).mean() <= MOM_MIN_AVG_AMOUNT:
+            continue
+        mom[code] = {
+            "close": [float(v) for v in g["Close"].tail(MOM_RET_DAYS)],
+            "high":  [float(v) for v in g["High"].tail(MOM_HIGH_DAYS)],
+        }
+    return highs, dates, tails, mom
 
 
 def build_high52w() -> None:
@@ -104,6 +118,7 @@ def build_high52w() -> None:
             MARKET_STATE.high52w = data["highs"]
             MARKET_STATE.high52w_dates = data["dates"]
             MARKET_STATE.close_tails = data.get("tails", {})
+            MARKET_STATE.mom_hist = data.get("mom", {})
             MARKET_STATE.high52w_ready = True
             print(f"[high52w] 由快取載入 {len(MARKET_STATE.high52w)} 檔 52 週高點、"
                   f"{len(MARKET_STATE.close_tails)} 檔日收序列")
@@ -117,7 +132,7 @@ def build_high52w() -> None:
     try:
         api.login(os.environ["SJ_API_KEY"], os.environ["SJ_SECRET_KEY"],
                   contracts_timeout=10_000)
-        highs, dates, tails = _build(api, today)
+        highs, dates, tails, mom = _build(api, today)
     except Exception as e:
         print(f"[high52w] 建立失敗: {e}")
         return
@@ -134,10 +149,11 @@ def build_high52w() -> None:
     MARKET_STATE.high52w = highs
     MARKET_STATE.high52w_dates = dates
     MARKET_STATE.close_tails = tails
+    MARKET_STATE.mom_hist = mom
     MARKET_STATE.high52w_ready = True
     try:
         _CACHE_DIR.mkdir(exist_ok=True)
-        path.write_text(json.dumps({"highs": highs, "dates": dates, "tails": tails}))
+        path.write_text(json.dumps({"highs": highs, "dates": dates, "tails": tails, "mom": mom}))
         for old in _CACHE_DIR.glob("high52w*.json"):   # 清舊快取（含舊版格式）
             if old != path:
                 old.unlink()

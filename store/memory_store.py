@@ -59,6 +59,8 @@ class MarketState:
     high52w_ready: bool = False
     # 模組十一：全市場近 N 日收盤 {code: [日收升冪，不含今天]}（與 high52w 同批建立）
     close_tails: dict = field(default_factory=dict)
+    # 模組十三：20 日均額達標個股的歷史 {code: {"close": [日收], "high": [日高]}}（升冪，不含今天）
+    mom_hist: dict = field(default_factory=dict)
 
     # 模組七：期貨庫存帳務（讀部位時一併更新，180 秒同步）
     fut_positions: list = field(default_factory=list)   # [{name,qty,avg,last,exposure,pnl},...]

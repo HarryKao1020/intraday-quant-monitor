@@ -43,6 +43,7 @@ from compute.macd import get_macd_display
 from compute.bias import get_bias_display
 from compute.new_high import get_new_highs
 from compute.ma_break import get_ma_break, get_ma_bias_top
+from compute.momentum import get_momentum_picks
 from store.memory_store import MARKET_STATE
 from config import (
     SCANNER_INTERVAL_SEC, HIGH_PRICE_COUNT, BIAS_PERIODS, HOLDINGS_SYNC_SEC,
@@ -527,6 +528,34 @@ def render_module5_lines():
     return lines
 
 
+# ── 模組十三：動能創高股（momentum.ipynb ranked 盤中版，依起漲分數排序）──
+def render_module13_lines():
+    d = get_momentum_picks()
+    if not d["ready"]:
+        return [_modhead("MOD.13", "動能創高股", "建立中", AMBER),
+                _line(_sp("  歷史序列建立中（隨 52 週高點表一併產生）…", DIM))]
+    lines = [_modhead("MOD.13", "動能創高股", f"{d['count']} 檔",
+                      SURGE if d["count"] else ACCENT)]
+    if not d["items"]:
+        lines.append(_line(_sp("  目前無符合條件個股", DIM)))
+        return lines
+    lines.append(_trow(
+        _col("代號", 7, "left", DIM), _col("名稱", 12, "left", DIM),
+        _col("60/120MA乖離", 13, "right", DIM),
+        _col("月季線乖離", 12, "right", DIM),
+        _col("10MA乖離", 11, "right", DIM),
+    ))
+    for it in d["items"]:
+        lines.append(_trow(
+            _col(it["code"], 7, "left", CODE),
+            _col(it["name"], 12, "left", TEXT),
+            _bias_col(it["gap_60_120"], 13),
+            _bias_col(it["ma_bias"], 12),
+            _bias_col(it["bias10"], 11),
+        ))
+    return lines
+
+
 # ── 模組七：庫存帳務（期貨部位明細，讀部位時更新）──────────
 def render_module7_lines():
     rows = MARKET_STATE.fut_positions
@@ -925,6 +954,7 @@ def render_screen_body(period="day", flow_sort=None):
                 _col_cap("持股狀態 · MY HOLDINGS"),
                 _cell(render_module1_lines()),
                 _cell(render_module3_lines()),
+                _cell(render_module13_lines()),
                 _cell(render_module5_lines()),
                 _cell(render_module7_lines()),
                 _cell(render_module9_lines()),
